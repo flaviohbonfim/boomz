@@ -340,9 +340,16 @@ scene("game", () => {
     let isPaused = false;
     let isInvincible = false;
     let runEnded = false;
+    const battleStartedAt = Date.now();
+    let enemiesDefeated = 0;
+    let totalEnemies = 0;
     let pauseSelection = 0;
     let pauseButtons = [];
     let pauseLabels = [];
+    let resultSelection = 0;
+    let resultButtons = [];
+    let resultLabels = [];
+    let resultOptions = [];
 
     const pauseOptions = [
         { label: "Voltar ao jogo", action: () => closePause() },
@@ -482,6 +489,13 @@ scene("game", () => {
         fireCountText.text = `x${firePower}`;
     }
 
+    function formatBattleTime(ms) {
+        const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+        const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+        const seconds = String(totalSeconds % 60).padStart(2, "0");
+        return `${minutes}:${seconds}`;
+    }
+
     function showToast(message, tint) {
         const toast = add([
             text(message, { size: 14 }),
@@ -500,6 +514,116 @@ scene("game", () => {
         });
     }
 
+    function clearResultUI() {
+        clearTag("resultUI");
+        resultButtons = [];
+        resultLabels = [];
+        resultOptions = [];
+    }
+
+    function refreshResultMenu() {
+        resultButtons.forEach((button, index) => {
+            button.use(sprite(index === resultSelection ? "menuButtonActive" : "menuButton"));
+            resultLabels[index].color = index === resultSelection
+                ? rgb(255, 225, 150)
+                : rgb(196, 173, 186);
+        });
+    }
+
+    function runResultSelection() {
+        if (resultOptions.length === 0) return;
+        resultOptions[resultSelection].action();
+    }
+
+    function openResultScreen(title, tint, subtitle, statLines) {
+        runEnded = true;
+        isPaused = false;
+        clearPauseUI();
+        clearTag("toast");
+        clearResultUI();
+
+        resultOptions = [
+            { label: "Jogar novamente", action: () => go("game") },
+            { label: "Menu inicial", action: () => go("menu") },
+        ];
+
+        const panelY = height() / 2 + (statLines.length > 0 ? 10 : 0);
+
+        add([
+            rect(width(), height()),
+            pos(0, 0),
+            color(0, 0, 0),
+            opacity(0.68),
+            fixed(),
+            z(149),
+            "resultUI",
+        ]);
+        add([
+            sprite("controlsPanel"),
+            pos(width() / 2, panelY),
+            anchor("center"),
+            fixed(),
+            z(150),
+            "resultUI",
+        ]);
+        add([
+            text(title, { size: 24 }),
+            pos(width() / 2, panelY - 68),
+            anchor("center"),
+            color(tint[0], tint[1], tint[2]),
+            fixed(),
+            z(151),
+            "resultUI",
+        ]);
+        add([
+            text(subtitle, { size: 11 }),
+            pos(width() / 2, panelY - 48),
+            anchor("center"),
+            color(196, 173, 186),
+            fixed(),
+            z(151),
+            "resultUI",
+        ]);
+
+        statLines.forEach((line, index) => {
+            add([
+                text(line, { size: 12 }),
+                pos(width() / 2, panelY - 18 + index * 18),
+                anchor("center"),
+                color(224, 214, 221),
+                fixed(),
+                z(151),
+                "resultUI",
+            ]);
+        });
+
+        resultSelection = 0;
+        resultOptions.forEach((option, index) => {
+            const y = panelY + 42 + index * 28;
+            const button = add([
+                sprite(index === 0 ? "menuButtonActive" : "menuButton"),
+                pos(width() / 2, y),
+                anchor("center"),
+                fixed(),
+                z(151),
+                "resultUI",
+            ]);
+            const label = add([
+                text(option.label, { size: 12 }),
+                pos(width() / 2, y + 1),
+                anchor("center"),
+                color(index === 0 ? 255 : 196, index === 0 ? 225 : 173, index === 0 ? 150 : 186),
+                fixed(),
+                z(152),
+                "resultUI",
+            ]);
+            resultButtons.push(button);
+            resultLabels.push(label);
+        });
+
+        refreshResultMenu();
+    }
+
     function tileHasBomb(gx, gy) {
         return get("bomb").find((bomb) => bomb.gridX === gx && bomb.gridY === gy);
     }
@@ -508,6 +632,12 @@ scene("game", () => {
         if (!inBounds(gx, gy)) return true;
         if (gameMap[gy][gx] === SOLID || gameMap[gy][gx] === DESTRUCTIBLE) return true;
         return Boolean(tileHasBomb(gx, gy));
+    }
+
+    function defeatZombie(zombie) {
+        if (!zombie.exists()) return;
+        destroy(zombie);
+        enemiesDefeated += 1;
     }
 
     function spawnExplosion(gx, gy) {
@@ -523,7 +653,7 @@ scene("game", () => {
         get("zombie").forEach((zombie) => {
             const zombieGrid = gridFromPos(zombie.pos);
             if (zombieGrid.x === gx && zombieGrid.y === gy && zombie.exists()) {
-                destroy(zombie);
+                defeatZombie(zombie);
             }
         });
 
@@ -599,7 +729,7 @@ scene("game", () => {
     }
 
     function placeBomb() {
-        if (isPaused) return;
+        if (isPaused || runEnded) return;
 
         const activeBombs = get("bomb");
         if (activeBombs.length >= maxBombs) return;
@@ -628,7 +758,7 @@ scene("game", () => {
     }
 
     onUpdate(() => {
-        if (isPaused) return;
+        if (isPaused || runEnded) return;
 
         if (player.passThroughBomb) {
             if (!player.passThroughBomb.exists()) {
@@ -698,6 +828,7 @@ scene("game", () => {
             },
         ]);
     });
+    totalEnemies = zombieSpawns.length;
 
     function chooseOpenDirection(zombie) {
         const current = gridFromPos(zombie.pos);
@@ -714,7 +845,7 @@ scene("game", () => {
     }
 
     onUpdate("zombie", (zombie) => {
-        if (isPaused) return;
+        if (isPaused || runEnded) return;
 
         zombie.moveTimer -= dt();
         if (zombie.moveTimer <= 0) {
@@ -772,35 +903,18 @@ scene("game", () => {
 
     function endRun(message, tint, restartDelay) {
         if (runEnded) return;
-        runEnded = true;
-        clearTag("pauseUI");
-        add([
-            sprite("pausePanel"),
-            pos(width() / 2, height() / 2),
-            anchor("center"),
-            fixed(),
-            z(150),
-            "resultUI",
-        ]);
-        add([
-            text(message, { size: 28 }),
-            pos(width() / 2, height() / 2 - 16),
-            anchor("center"),
-            color(tint[0], tint[1], tint[2]),
-            fixed(),
-            z(151),
-            "resultUI",
-        ]);
-        add([
-            text("Reiniciando...", { size: 11 }),
-            pos(width() / 2, height() / 2 + 18),
-            anchor("center"),
-            color(196, 173, 186),
-            fixed(),
-            z(151),
-            "resultUI",
-        ]);
-        wait(restartDelay, () => go("game"));
+        openResultScreen(message, tint, "Escolha o proximo passo", []);
+    }
+
+    function showVictorySummary() {
+        if (runEnded) return;
+
+        const lines = [
+            `Tempo: ${formatBattleTime(Date.now() - battleStartedAt)}`,
+            `Vidas perdidas: ${START_LIVES - lives}`,
+            `Inimigos derrotados: ${enemiesDefeated}/${totalEnemies}`,
+        ];
+        openResultScreen("VOCE VENCEU", [236, 208, 122], "Estatisticas da batalha", lines);
     }
 
     function playerHit() {
@@ -838,7 +952,7 @@ scene("game", () => {
     function checkWin() {
         if (runEnded) return;
         if (get("zombie").length === 0) {
-            endRun("VOCE VENCEU", [236, 208, 122], 2);
+            showVictorySummary();
         }
     }
 
@@ -846,7 +960,7 @@ scene("game", () => {
     player.onCollide("explosion", () => playerHit());
 
     onCollide("explosion", "zombie", (_exp, zombie) => {
-        if (zombie.exists()) destroy(zombie);
+        defeatZombie(zombie);
         checkWin();
     });
 
@@ -965,26 +1079,43 @@ scene("game", () => {
     onKeyPress("z", placeBomb);
     onKeyPress("x", placeBomb);
     onKeyPress("up", () => {
-        if (!isPaused) return;
-        pauseSelection = (pauseSelection - 1 + pauseOptions.length) % pauseOptions.length;
-        refreshPauseMenu();
+        if (isPaused) {
+            pauseSelection = (pauseSelection - 1 + pauseOptions.length) % pauseOptions.length;
+            refreshPauseMenu();
+            return;
+        }
+        if (runEnded && resultOptions.length > 0) {
+            resultSelection = (resultSelection - 1 + resultOptions.length) % resultOptions.length;
+            refreshResultMenu();
+        }
     });
     onKeyPress("down", () => {
-        if (!isPaused) return;
-        pauseSelection = (pauseSelection + 1) % pauseOptions.length;
-        refreshPauseMenu();
+        if (isPaused) {
+            pauseSelection = (pauseSelection + 1) % pauseOptions.length;
+            refreshPauseMenu();
+            return;
+        }
+        if (runEnded && resultOptions.length > 0) {
+            resultSelection = (resultSelection + 1) % resultOptions.length;
+            refreshResultMenu();
+        }
     });
     onKeyPress("enter", () => {
-        if (!isPaused) return;
-        runPauseSelection();
+        if (isPaused) {
+            runPauseSelection();
+            return;
+        }
+        if (runEnded && resultOptions.length > 0) {
+            runResultSelection();
+        }
     });
     onKeyPress("escape", togglePause);
     onKeyPress("p", togglePause);
     onKeyPress("r", () => {
-        if (isPaused) go("game");
+        if (isPaused || (runEnded && resultOptions.length > 0)) go("game");
     });
     onKeyPress("m", () => {
-        if (isPaused) go("menu");
+        if (isPaused || (runEnded && resultOptions.length > 0)) go("menu");
     });
 
     updateHearts();
