@@ -1,26 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Castlevania Bomberman</title>
+    <title>Bombervania</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #1a0a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        canvas { border: 4px solid #4a2a4a; box-shadow: 0 0 30px rgba(128, 0, 128, 0.5); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(circle at top, #41203f 0%, #140813 50%, #060405 100%);
+            font-family: Georgia, serif;
+        }
+
+        canvas {
+            border: 4px solid #4e274b;
+            box-shadow:
+                0 0 0 4px rgba(18, 7, 18, 0.95),
+                0 24px 60px rgba(0, 0, 0, 0.65),
+                0 0 40px rgba(139, 42, 87, 0.35);
+            image-rendering: pixelated;
+        }
     </style>
 </head>
 <body>
-    <script src="https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs" type="module"></script>
     <script type="module">
 import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
 
-const k = kaboom({
+kaboom({
     width: 320,
     height: 280,
-    background: [25, 10, 25],
     scale: 2.5,
     crisp: true,
+    background: [8, 5, 10],
 });
 
 const TILE_SIZE = 16;
@@ -28,239 +43,393 @@ const MAP_WIDTH = 20;
 const MAP_HEIGHT = 15;
 const HUD_HEIGHT = 40;
 const MAP_OFFSET_Y = HUD_HEIGHT;
-
-function makeSpriteData(charMap, props) {
-    const canvas = document.createElement("canvas");
-    canvas.width = charMap[0].length;
-    canvas.height = charMap.length;
-    const ctx = canvas.getContext("2d");
-    
-    charMap.forEach((row, y) => {
-        for (let x = 0; x < row.length; x++) {
-            const char = row[x];
-            const color = props[char];
-            if (color) {
-                ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-                ctx.fillRect(x, y, 1, 1);
-            }
-        }
-    });
-    
-    return canvas;
-}
-
-const playerData = [
-    "................",
-    "........dddd....",
-    ".......ddddd....",
-    "......ddddddd...",
-    ".....ddddddddd..",
-    "....ddddddddddd.",
-    "....dddddddddd..",
-    "....dddddddddd..",
-    ".....dddwddddd..",
-    ".....ddddddddd..",
-    "......ddddd.....",
-    ".....d.dddd.d...",
-    ".......dddd.....",
-    "......d.d.d.....",
-    ".....d.ddd.d....",
-    "....d...ddd..d..",
-];
-loadSprite("player", makeSpriteData(playerData, {
-    "d": [60, 30, 60],
-    "w": [220, 200, 180],
-}));
-
-const wallData = [
-    "BBBBBBBBBBBBBBBB",
-    "BbbbbbbbbbbbbbbB",
-    "BbGGGGGGGGGGGbbB",
-    "BbGggggggggggbbB",
-    "BbGgBBBBBBBBBgbB",
-    "BbGgB.......BgbbB",
-    "BbGgB.......BgbbB",
-    "BbGgB.......BgbbB",
-    "BbGgB.......BgbbB",
-    "BbGgB.......BgbbB",
-    "BbGgB.......BgbbB",
-    "BbGgB.......BgbbB",
-    "BbGgB.......BgbbB",
-    "BbGgBBBBBBBBBgbB",
-    "BbGggggggggggbbB",
-    "BBBBBBBBBBBBBBBB",
-];
-loadSprite("wall", makeSpriteData(wallData, {
-    "B": [40, 20, 40],
-    "b": [60, 30, 60],
-    "G": [80, 50, 80],
-    "g": [100, 70, 100],
-}));
-
-const boxData = [
-    "................",
-    "WWWWWWWWWWWWWWWW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WwwwwwwwwwwwwwwW",
-    "WWWWWWWWWWWWWWWW",
-    "................",
-];
-loadSprite("box", makeSpriteData(boxData, {
-    "W": [80, 50, 20],
-    "w": [120, 80, 40],
-}));
-
-const bombData = [
-    "................",
-    "..IIIIIIIIIII...",
-    ".IiiiiiiiiiiiI..",
-    ".IiiiiIRRRRRiI..",
-    ".IiIiIRRRRRRiiI.",
-    ".IiIiIRRRRRRiiI.",
-    ".IiIiIRRRRRRiiI.",
-    ".IiIiIRRRRRRiiI.",
-    ".IiIiIRRRRRRiiI.",
-    ".IiIiIRRRRRRiiI.",
-    ".IiIiIRRRRRRiiI.",
-    ".IiiiiiiiiiiiI..",
-    "..IiiiiiiiiiI...",
-    "...III...III....",
-    "......I.........",
-    "................",
-];
-loadSprite("bomb", makeSpriteData(bombData, {
-    "I": [30, 30, 30],
-    "i": [50, 50, 50],
-    "R": [180, 20, 20],
-}));
-
-const explosionData = [
-    "....BBBBBB......",
-    "..BbbBbbbBb......",
-    ".BbBBWWWBBb.....",
-    "BbbBWBBBBWBbb...",
-    "BbBWBBWBBWBBb...",
-    "BbBW....BWBBb...",
-    "BBB......BBB....",
-    "BBB......BBB....",
-    "BbBW....BWBBb...",
-    "BbBWWBWWWWBBb...",
-    "BbbBWWWWWWBbb...",
-    ".BbBBBBBBBbb....",
-    "..Bbbbbbbb......",
-    "....BBBB........",
-    "................",
-    "................",
-];
-loadSprite("explosion", makeSpriteData(explosionData, {
-    "B": [100, 100, 255],
-    "b": [150, 150, 255],
-    "W": [255, 255, 255],
-}));
-
-const zombieData = [
-    ".......GG.......",
-    "....GGGGGGG.....",
-    "...GGGGGGGGG....",
-    "...GGGGGGGGG....",
-    "...GgggGGggg....",
-    "...GgggGGggg....",
-    "....GGGGGGG.....",
-    ".....GGGGG......",
-    "...GGGGGGGGG....",
-    "..GGGGGGGGGGG...",
-    "..GGGGGGGGGGG...",
-    "...GGGGGGGGG....",
-    ".......GGG......",
-    "......G.G.......",
-    ".....G...G......",
-    "................",
-];
-loadSprite("zombie", makeSpriteData(zombieData, {
-    "G": [60, 100, 60],
-    "g": [40, 80, 40],
-}));
-
-const heartData = [
-    "..RRRR..",
-    ".RRRRRR.",
-    "RRRRRRRR",
-    "RRRRRRRR",
-    ".RRRRRR.",
-    "..RRRR..",
-    "...RR...",
-    "....R...",
-];
-loadSprite("heart", makeSpriteData(heartData, {
-    "R": [220, 30, 60],
-}));
-
-const heartEmptyData = [
-    "..DDDD..",
-    ".DDDDDD.",
-    "DDDDDDDD",
-    "DDDDDDDD",
-    ".DDDDDD.",
-    "..DDDD..",
-    "...DD...",
-    "....D...",
-];
-loadSprite("heartEmpty", makeSpriteData(heartEmptyData, {
-    "D": [80, 40, 60],
-}));
-
-const bombPowerData = [
-    "..BBBB..",
-    ".BBBBBB.",
-    "BBBBBBBB",
-    "BBBBBBBB",
-    "BBBBBBBB",
-    "BBBBBBBB",
-    ".BBBBBB.",
-    "..BBBB..",
-];
-loadSprite("bombPower", makeSpriteData(bombPowerData, {
-    "B": [255, 100, 50],
-}));
-
-const firePowerData = [
-    "....RR....",
-    "...RRRR...",
-    "..RRRRRR..",
-    ".RRRRRRRR.",
-    "RRRRRRRRRR",
-    "..RRRRRR..",
-    "...RRRR...",
-    "....RR....",
-];
-loadSprite("firePower", makeSpriteData(firePowerData, {
-    "R": [255, 150, 0],
-}));
+const START_LIVES = 3;
+const START_BOMBS = 1;
+const START_FIRE = 2;
 
 const SOLID = 1;
 const DESTRUCTIBLE = 2;
 const EMPTY = 0;
-const BOMB_POWERUP = 3;
-const FIRE_POWERUP = 4;
+const POWER_BOMB = "bomb";
+const POWER_FIRE = "fire";
 
 let gameMap = [];
+
+function makeSprite(name, width, height, draw) {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    draw(ctx, width, height);
+    loadSprite(name, canvas);
+}
+
+function panel(ctx, x, y, w, h, fill, stroke, accent) {
+    ctx.fillStyle = fill;
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+    ctx.fillStyle = accent;
+    ctx.fillRect(x + 4, y + 4, w - 8, 2);
+    ctx.fillRect(x + 4, h + y - 6, w - 8, 2);
+}
+
+function worldPos(gx, gy) {
+    return vec2(gx * TILE_SIZE + TILE_SIZE / 2, gy * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y);
+}
+
+function gridFromPos(pos) {
+    return {
+        x: Math.round((pos.x - TILE_SIZE / 2) / TILE_SIZE),
+        y: Math.round((pos.y - MAP_OFFSET_Y - TILE_SIZE / 2) / TILE_SIZE),
+    };
+}
+
+function inBounds(gx, gy) {
+    return gx >= 0 && gx < MAP_WIDTH && gy >= 0 && gy < MAP_HEIGHT;
+}
+
+function generateAssets() {
+    makeSprite("menuBackdrop", 320, 280, (ctx, w, h) => {
+        const sky = ctx.createLinearGradient(0, 0, 0, h);
+        sky.addColorStop(0, "#301529");
+        sky.addColorStop(0.55, "#120812");
+        sky.addColorStop(1, "#050405");
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = "rgba(235, 212, 184, 0.95)";
+        ctx.beginPath();
+        ctx.arc(248, 54, 26, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(95, 38, 70, 0.35)";
+        ctx.beginPath();
+        ctx.arc(258, 48, 30, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#080608";
+        ctx.fillRect(0, 190, w, 90);
+        ctx.fillRect(18, 136, 28, 84);
+        ctx.fillRect(52, 112, 24, 108);
+        ctx.fillRect(78, 126, 22, 94);
+        ctx.fillRect(108, 84, 38, 136);
+        ctx.fillRect(154, 102, 26, 118);
+        ctx.fillRect(188, 118, 24, 102);
+        ctx.fillRect(220, 96, 30, 124);
+        ctx.fillRect(258, 128, 24, 92);
+
+        ctx.beginPath();
+        ctx.moveTo(110, 84);
+        ctx.lineTo(127, 56);
+        ctx.lineTo(144, 84);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(221, 96);
+        ctx.lineTo(236, 70);
+        ctx.lineTo(251, 96);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(52, 112);
+        ctx.lineTo(64, 88);
+        ctx.lineTo(76, 112);
+        ctx.fill();
+
+        ctx.fillStyle = "#7f2837";
+        ctx.fillRect(118, 114, 6, 10);
+        ctx.fillRect(132, 114, 6, 10);
+        ctx.fillRect(228, 126, 6, 10);
+        ctx.fillRect(238, 126, 6, 10);
+        ctx.fillRect(58, 136, 5, 8);
+        ctx.fillRect(66, 136, 5, 8);
+
+        ctx.fillStyle = "rgba(185, 130, 150, 0.12)";
+        ctx.fillRect(0, 202, w, 10);
+        ctx.fillRect(0, 224, w, 14);
+        ctx.fillRect(0, 250, w, 24);
+
+        ctx.fillStyle = "rgba(220, 220, 220, 0.07)";
+        ctx.fillRect(18, 34, 48, 2);
+        ctx.fillRect(74, 24, 26, 2);
+        ctx.fillRect(200, 88, 34, 2);
+    });
+
+    makeSprite("gameBackdrop", 320, 280, (ctx, w, h) => {
+        const bg = ctx.createLinearGradient(0, 0, 0, h);
+        bg.addColorStop(0, "#1c0d18");
+        bg.addColorStop(0.2, "#150b13");
+        bg.addColorStop(1, "#09070a");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = "rgba(143, 48, 93, 0.14)";
+        ctx.fillRect(0, h - 44, w, 28);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+        ctx.fillRect(0, HUD_HEIGHT, w, 2);
+        ctx.fillRect(0, HUD_HEIGHT + MAP_HEIGHT * TILE_SIZE - 2, w, 2);
+    });
+
+    makeSprite("hudPanel", 320, 40, (ctx, w, h) => {
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, "#28111e");
+        grad.addColorStop(1, "#140912");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "#4f243f";
+        ctx.fillRect(0, h - 3, w, 3);
+        ctx.fillStyle = "rgba(255,255,255,0.08)";
+        ctx.fillRect(0, 0, w, 2);
+        ctx.fillStyle = "#7d395e";
+        ctx.fillRect(98, 8, 124, 1);
+        ctx.fillRect(98, 31, 124, 1);
+    });
+
+    makeSprite("menuPlaque", 220, 70, (ctx, w, h) => {
+        panel(ctx, 0, 0, w, h, "#170d17", "#734162", "#a35e86");
+        ctx.fillStyle = "#4e2842";
+        ctx.fillRect(14, 14, w - 28, h - 28);
+        ctx.fillStyle = "#a35e86";
+        ctx.fillRect(20, 20, w - 40, 2);
+        ctx.fillRect(20, h - 22, w - 40, 2);
+    });
+
+    makeSprite("menuButton", 154, 28, (ctx, w, h) => {
+        panel(ctx, 0, 0, w, h, "#190f19", "#57324d", "#7e5071");
+    });
+
+    makeSprite("menuButtonActive", 154, 28, (ctx, w, h) => {
+        panel(ctx, 0, 0, w, h, "#2a1623", "#c89b60", "#f0c97c");
+        ctx.fillStyle = "rgba(255, 212, 120, 0.18)";
+        ctx.fillRect(6, 6, w - 12, h - 12);
+    });
+
+    makeSprite("controlsPanel", 280, 184, (ctx, w, h) => {
+        panel(ctx, 0, 0, w, h, "#160d15", "#673855", "#a76487");
+        ctx.fillStyle = "rgba(255,255,255,0.04)";
+        ctx.fillRect(14, 36, w - 28, 2);
+        ctx.fillRect(14, h - 22, w - 28, 2);
+    });
+
+    makeSprite("pausePanel", 212, 120, (ctx, w, h) => {
+        panel(ctx, 0, 0, w, h, "#130c12", "#7a4768", "#d6b064");
+        ctx.fillStyle = "rgba(255,255,255,0.04)";
+        ctx.fillRect(12, 18, w - 24, h - 36);
+    });
+
+    makeSprite("selectorBat", 18, 10, (ctx) => {
+        ctx.fillStyle = "#e2be73";
+        ctx.fillRect(8, 3, 2, 4);
+        ctx.fillRect(3, 4, 5, 2);
+        ctx.fillRect(10, 4, 5, 2);
+        ctx.fillRect(1, 5, 3, 2);
+        ctx.fillRect(14, 5, 3, 2);
+    });
+
+    makeSprite("floor", 16, 16, (ctx) => {
+        ctx.fillStyle = "#201820";
+        ctx.fillRect(0, 0, 16, 16);
+        ctx.fillStyle = "#2e2330";
+        ctx.fillRect(1, 1, 14, 14);
+        ctx.fillStyle = "#3c3140";
+        ctx.fillRect(2, 2, 12, 2);
+        ctx.fillRect(2, 10, 12, 1);
+        ctx.fillStyle = "#5f2d47";
+        ctx.fillRect(3, 13, 10, 1);
+        ctx.fillStyle = "#181018";
+        ctx.fillRect(4, 5, 1, 5);
+        ctx.fillRect(9, 7, 4, 1);
+    });
+
+    makeSprite("wall", 16, 16, (ctx) => {
+        ctx.fillStyle = "#17131a";
+        ctx.fillRect(0, 0, 16, 16);
+        ctx.fillStyle = "#53495c";
+        ctx.fillRect(1, 1, 14, 14);
+        ctx.fillStyle = "#72667d";
+        ctx.fillRect(2, 2, 12, 2);
+        ctx.fillRect(2, 12, 12, 2);
+        ctx.fillStyle = "#403848";
+        ctx.fillRect(3, 4, 3, 8);
+        ctx.fillRect(10, 4, 3, 8);
+        ctx.fillStyle = "#8a2f56";
+        ctx.fillRect(7, 5, 2, 6);
+        ctx.fillStyle = "#a98fae";
+        ctx.fillRect(2, 4, 1, 8);
+        ctx.fillRect(13, 4, 1, 8);
+    });
+
+    makeSprite("box", 16, 16, (ctx) => {
+        ctx.fillStyle = "#120d0f";
+        ctx.fillRect(0, 0, 16, 16);
+        ctx.fillStyle = "#4b3021";
+        ctx.beginPath();
+        ctx.moveTo(8, 1);
+        ctx.lineTo(14, 5);
+        ctx.lineTo(12, 14);
+        ctx.lineTo(4, 14);
+        ctx.lineTo(2, 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#6a432f";
+        ctx.beginPath();
+        ctx.moveTo(8, 3);
+        ctx.lineTo(12, 6);
+        ctx.lineTo(11, 12);
+        ctx.lineTo(5, 12);
+        ctx.lineTo(4, 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#d7c6a0";
+        ctx.fillRect(7, 5, 2, 6);
+        ctx.fillRect(5, 7, 6, 2);
+    });
+
+    makeSprite("player", 16, 16, (ctx) => {
+        ctx.fillStyle = "#0f0b11";
+        ctx.fillRect(4, 1, 8, 2);
+        ctx.fillRect(3, 3, 10, 1);
+        ctx.fillStyle = "#d8c2a8";
+        ctx.fillRect(5, 4, 6, 4);
+        ctx.fillStyle = "#2e1629";
+        ctx.fillRect(4, 8, 8, 5);
+        ctx.fillStyle = "#7a2033";
+        ctx.fillRect(6, 8, 4, 5);
+        ctx.fillStyle = "#c3a35c";
+        ctx.fillRect(5, 9, 6, 1);
+        ctx.fillStyle = "#1a141b";
+        ctx.fillRect(4, 13, 3, 2);
+        ctx.fillRect(9, 13, 3, 2);
+        ctx.fillStyle = "#efe8df";
+        ctx.fillRect(6, 5, 1, 1);
+        ctx.fillRect(9, 5, 1, 1);
+    });
+
+    makeSprite("bomb", 16, 16, (ctx) => {
+        ctx.fillStyle = "#0e0d10";
+        ctx.beginPath();
+        ctx.arc(8, 9, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#38363e";
+        ctx.beginPath();
+        ctx.arc(8, 9, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#6c6972";
+        ctx.fillRect(6, 5, 2, 1);
+        ctx.fillRect(5, 6, 1, 1);
+        ctx.fillStyle = "#8e2233";
+        ctx.fillRect(8, 2, 2, 3);
+        ctx.fillRect(10, 1, 1, 2);
+        ctx.fillStyle = "#ffcc5f";
+        ctx.fillRect(10, 0, 1, 1);
+    });
+
+    makeSprite("explosion", 16, 16, (ctx) => {
+        ctx.fillStyle = "#82cfff";
+        ctx.fillRect(6, 1, 4, 14);
+        ctx.fillRect(1, 6, 14, 4);
+        ctx.fillStyle = "#d7f5ff";
+        ctx.fillRect(7, 2, 2, 12);
+        ctx.fillRect(2, 7, 12, 2);
+        ctx.fillStyle = "#4aa8ff";
+        ctx.fillRect(4, 4, 8, 8);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(6, 6, 4, 4);
+    });
+
+    makeSprite("zombie", 16, 16, (ctx) => {
+        ctx.fillStyle = "#34543a";
+        ctx.fillRect(4, 2, 8, 5);
+        ctx.fillStyle = "#82b27f";
+        ctx.fillRect(5, 3, 6, 4);
+        ctx.fillStyle = "#e16068";
+        ctx.fillRect(6, 4, 1, 1);
+        ctx.fillRect(9, 4, 1, 1);
+        ctx.fillStyle = "#2c3f2b";
+        ctx.fillRect(3, 8, 10, 4);
+        ctx.fillStyle = "#576b72";
+        ctx.fillRect(5, 8, 6, 3);
+        ctx.fillStyle = "#1a1618";
+        ctx.fillRect(4, 12, 3, 3);
+        ctx.fillRect(9, 12, 3, 3);
+    });
+
+    makeSprite("heart", 10, 9, (ctx) => {
+        ctx.fillStyle = "#d93a5d";
+        ctx.fillRect(2, 0, 2, 2);
+        ctx.fillRect(6, 0, 2, 2);
+        ctx.fillRect(1, 1, 8, 3);
+        ctx.fillRect(2, 4, 6, 2);
+        ctx.fillRect(3, 6, 4, 1);
+        ctx.fillRect(4, 7, 2, 1);
+    });
+
+    makeSprite("heartEmpty", 10, 9, (ctx) => {
+        ctx.fillStyle = "#5a3045";
+        ctx.fillRect(2, 0, 2, 2);
+        ctx.fillRect(6, 0, 2, 2);
+        ctx.fillRect(1, 1, 8, 1);
+        ctx.fillRect(1, 2, 1, 2);
+        ctx.fillRect(8, 2, 1, 2);
+        ctx.fillRect(2, 4, 1, 2);
+        ctx.fillRect(7, 4, 1, 2);
+        ctx.fillRect(3, 6, 1, 1);
+        ctx.fillRect(6, 6, 1, 1);
+        ctx.fillRect(4, 7, 2, 1);
+    });
+
+    makeSprite("bombPower", 12, 12, (ctx) => {
+        ctx.fillStyle = "#131216";
+        ctx.beginPath();
+        ctx.arc(5, 7, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#4f4d57";
+        ctx.beginPath();
+        ctx.arc(5, 7, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#d6b064";
+        ctx.fillRect(8, 1, 3, 1);
+        ctx.fillRect(9, 0, 1, 3);
+        ctx.fillRect(5, 1, 2, 2);
+        ctx.fillStyle = "#8e2233";
+        ctx.fillRect(6, 0, 1, 1);
+    });
+
+    makeSprite("firePower", 12, 12, (ctx) => {
+        ctx.fillStyle = "#ffd173";
+        ctx.fillRect(8, 1, 3, 1);
+        ctx.fillRect(9, 0, 1, 3);
+        ctx.fillStyle = "#ff9c32";
+        ctx.beginPath();
+        ctx.moveTo(5, 1);
+        ctx.lineTo(8, 5);
+        ctx.lineTo(7, 10);
+        ctx.lineTo(4, 11);
+        ctx.lineTo(2, 8);
+        ctx.lineTo(2, 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#ffe59f";
+        ctx.beginPath();
+        ctx.moveTo(5, 3);
+        ctx.lineTo(6, 6);
+        ctx.lineTo(5, 9);
+        ctx.lineTo(4, 7);
+        ctx.lineTo(3, 6);
+        ctx.closePath();
+        ctx.fill();
+    });
+}
+
+generateAssets();
 
 function generateMap() {
     gameMap = [];
     for (let y = 0; y < MAP_HEIGHT; y++) {
         gameMap[y] = [];
         for (let x = 0; x < MAP_WIDTH; x++) {
-            if (x === 0 || x === MAP_WIDTH - 1 || y === 0 || y === MAP_HEIGHT - 1) {
+            if (x === 0 || y === 0 || x === MAP_WIDTH - 1 || y === MAP_HEIGHT - 1) {
                 gameMap[y][x] = SOLID;
             } else if (x % 2 === 0 && y % 2 === 0) {
                 gameMap[y][x] = SOLID;
@@ -269,127 +438,238 @@ function generateMap() {
             }
         }
     }
-    
-    const safeZone = [[1, 1], [2, 1], [1, 2], [3, 1], [1, 3], [2, 2]];
-    
+
+    const safeZone = new Set(["1,1", "2,1", "1,2", "3,1", "1,3", "2,2"]);
     for (let y = 1; y < MAP_HEIGHT - 1; y++) {
         for (let x = 1; x < MAP_WIDTH - 1; x++) {
-            if (gameMap[y][x] === EMPTY) {
-                const isSafe = safeZone.some(([sx, sy]) => x === sx && y === sy);
-                if (!isSafe && Math.random() < 0.2) {
-                    gameMap[y][x] = DESTRUCTIBLE;
-                }
+            if (gameMap[y][x] === EMPTY && !safeZone.has(`${x},${y}`) && Math.random() < 0.2) {
+                gameMap[y][x] = DESTRUCTIBLE;
             }
         }
     }
 }
 
+function clearTag(tag) {
+    get(tag).forEach((obj) => destroy(obj));
+}
+
+scene("menu", () => {
+    add([sprite("menuBackdrop"), pos(0, 0)]);
+
+    add([
+        sprite("menuPlaque"),
+        pos(width() / 2, 58),
+        anchor("center"),
+    ]);
+
+    add([
+        text("BOMBERVANIA", { size: 26 }),
+        pos(width() / 2, 46),
+        anchor("center"),
+        color(232, 200, 123),
+    ]);
+
+    add([
+        text("Castelo Maldito", { size: 12 }),
+        pos(width() / 2, 67),
+        anchor("center"),
+        color(182, 116, 150),
+    ]);
+
+    add([
+        text("Cace os mortos, abra caminho e sobreviva.", { size: 10 }),
+        pos(width() / 2, 112),
+        anchor("center"),
+        color(185, 173, 180),
+    ]);
+
+    const options = [
+        { label: "INICIAR JOGO", target: "game" },
+        { label: "CONTROLES", target: "controls" },
+    ];
+
+    let selected = 0;
+    const buttons = [];
+    const labels = [];
+
+    options.forEach((option, index) => {
+        const y = 162 + index * 40;
+        const button = add([
+            sprite(index === selected ? "menuButtonActive" : "menuButton"),
+            pos(width() / 2, y),
+            anchor("center"),
+        ]);
+        const label = add([
+            text(option.label, { size: 14 }),
+            pos(width() / 2, y + 1),
+            anchor("center"),
+            color(index === selected ? 255 : 196, index === selected ? 222 : 173, index === selected ? 150 : 186),
+        ]);
+        buttons.push(button);
+        labels.push(label);
+    });
+
+    const leftBat = add([
+        sprite("selectorBat"),
+        pos(width() / 2 - 96, 162),
+        anchor("center"),
+    ]);
+    const rightBat = add([
+        sprite("selectorBat"),
+        pos(width() / 2 + 96, 162),
+        anchor("center"),
+        scale(vec2(-1, 1)),
+    ]);
+
+    function refreshMenu() {
+        buttons.forEach((button, index) => {
+            button.use(sprite(index === selected ? "menuButtonActive" : "menuButton"));
+            labels[index].color = index === selected ? rgb(255, 225, 150) : rgb(196, 173, 186);
+        });
+        leftBat.pos.y = 162 + selected * 40;
+        rightBat.pos.y = 162 + selected * 40;
+    }
+
+    onUpdate(() => {
+        const pulse = 1 + Math.sin(time() * 8) * 0.08;
+        leftBat.scale = vec2(pulse, pulse);
+        rightBat.scale = vec2(-pulse, pulse);
+    });
+
+    onKeyPress("up", () => {
+        selected = (selected - 1 + options.length) % options.length;
+        refreshMenu();
+    });
+
+    onKeyPress("down", () => {
+        selected = (selected + 1) % options.length;
+        refreshMenu();
+    });
+
+    onKeyPress("enter", () => {
+        go(options[selected].target);
+    });
+
+    add([
+        text("Use as setas para navegar e ENTER para escolher", { size: 10 }),
+        pos(width() / 2, height() - 18),
+        anchor("center"),
+        color(153, 129, 145),
+    ]);
+});
+
+scene("controls", () => {
+    add([sprite("menuBackdrop"), pos(0, 0)]);
+    add([
+        sprite("controlsPanel"),
+        pos(width() / 2, 145),
+        anchor("center"),
+    ]);
+
+    add([
+        text("CONTROLES", { size: 24 }),
+        pos(width() / 2, 54),
+        anchor("center"),
+        color(235, 203, 127),
+    ]);
+
+    const rows = [
+        { icon: "player", key: "SETAS / WASD", action: "Mover o cacador" },
+        { icon: "bomb", key: "SPACE / Z / X", action: "Soltar bomba" },
+        { icon: "pausePanel", key: "ESC / P", action: "Pausar partida" },
+    ];
+
+    rows.forEach((row, index) => {
+        const y = 102 + index * 38;
+        if (row.icon === "pausePanel") {
+            add([
+                rect(14, 14),
+                pos(48, y),
+                anchor("center"),
+                color(121, 71, 104),
+            ]);
+            add([
+                rect(4, 10),
+                pos(45, y),
+                anchor("center"),
+                color(233, 203, 127),
+            ]);
+            add([
+                rect(4, 10),
+                pos(51, y),
+                anchor("center"),
+                color(233, 203, 127),
+            ]);
+        } else {
+            add([
+                sprite(row.icon),
+                pos(48, y),
+                anchor("center"),
+                scale(1.2),
+            ]);
+        }
+
+        add([
+            text(row.key, { size: 12 }),
+            pos(72, y - 8),
+            anchor("left"),
+            color(239, 215, 159),
+        ]);
+        add([
+            text(row.action, { size: 11 }),
+            pos(72, y + 8),
+            anchor("left"),
+            color(191, 176, 190),
+        ]);
+    });
+
+    add([
+        text("ENTER ou ESC para voltar", { size: 10 }),
+        pos(width() / 2, 240),
+        anchor("center"),
+        color(153, 129, 145),
+    ]);
+
+    onKeyPress("enter", () => go("menu"));
+    onKeyPress("escape", () => go("menu"));
+});
+
 scene("game", () => {
     generateMap();
-    
-    let lives = 3;
-    let maxBombs = 1;
-    let firePower = 2;
+
+    let lives = START_LIVES;
+    let maxBombs = START_BOMBS;
+    let firePower = START_FIRE;
     let isPaused = false;
-    
-    add([
-        rect(width(), HUD_HEIGHT),
-        pos(0, 0),
-        color(20, 5, 20),
-        fixed(),
-        z(100),
-    ]);
-    
-    add([
-        text("CASTLEVANIA BOMBER", { size: 12 }),
-        pos(width() / 2, 8),
-        anchor("center"),
-        color(150, 100, 150),
-        fixed(),
-        z(101),
-    ]);
-    
-    const hearts = [];
-    for (let i = 0; i < 3; i++) {
-        const h = add([
-            sprite("heart"),
-            pos(12 + i * 20, 28),
-            anchor("center"),
-            scale(1.2),
-            fixed(),
-            z(101),
-        ]);
-        hearts.push(h);
-    }
-    
-    const bombLabel = add([
-        text("BOMBS:", { size: 10 }),
-        pos(80, 22),
-        anchor("left"),
-        color(200, 180, 100),
-        fixed(),
-        z(101),
-    ]);
-    
-    const bombCount = add([
-        text("1", { size: 14 }),
-        pos(120, 28),
-        anchor("center"),
-        color(255, 200, 100),
-        fixed(),
-        z(101),
-        "bombCount",
-    ]);
-    
-    const fireLabel = add([
-        text("FIRE:", { size: 10 }),
-        pos(145, 22),
-        anchor("left"),
-        color(200, 100, 100),
-        fixed(),
-        z(101),
-    ]);
-    
-    const fireCount = add([
-        text("2", { size: 14 }),
-        pos(180, 28),
-        anchor("center"),
-        color(255, 150, 50),
-        fixed(),
-        z(101),
-        "fireCount",
-    ]);
-    
-    add([
-        text("ESC: PAUSE", { size: 10 }),
-        pos(width() - 10, HUD_HEIGHT / 2),
-        anchor("right"),
-        color(120, 80, 120),
-        fixed(),
-        z(101),
-    ]);
-    
+    let isInvincible = false;
+
+    add([sprite("gameBackdrop"), pos(0, 0)]);
+    add([sprite("hudPanel"), pos(0, 0), fixed(), z(100)]);
+
     for (let y = 0; y < MAP_HEIGHT; y++) {
         for (let x = 0; x < MAP_WIDTH; x++) {
-            const px = x * TILE_SIZE + TILE_SIZE / 2;
-            const py = y * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y;
-            
+            add([
+                sprite("floor"),
+                pos(x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE),
+                z(1),
+            ]);
+
             if (gameMap[y][x] === SOLID) {
                 add([
                     sprite("wall"),
-                    pos(px, py),
+                    pos(x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE),
                     area(),
                     body({ isStatic: true }),
-                    anchor("center"),
+                    z(5),
                     "wall",
                 ]);
             } else if (gameMap[y][x] === DESTRUCTIBLE) {
                 add([
                     sprite("box"),
-                    pos(px, py),
+                    pos(x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE),
                     area(),
                     body({ isStatic: true }),
-                    anchor("center"),
+                    z(4),
                     "box",
                     "destructible",
                     { gridX: x, gridY: y },
@@ -397,546 +677,510 @@ scene("game", () => {
             }
         }
     }
-    
+
+    add([
+        text("BOMBERVANIA", { size: 12 }),
+        pos(width() / 2, 8),
+        anchor("center"),
+        color(233, 203, 127),
+        fixed(),
+        z(101),
+    ]);
+
+    const hearts = [];
+    for (let i = 0; i < START_LIVES; i++) {
+        hearts.push(add([
+            sprite("heart"),
+            pos(14 + i * 16, 25),
+            anchor("center"),
+            scale(1.3),
+            fixed(),
+            z(101),
+        ]));
+    }
+
+    add([
+        sprite("bombPower"),
+        pos(116, 24),
+        anchor("center"),
+        scale(1.3),
+        fixed(),
+        z(101),
+    ]);
+    const bombCountText = add([
+        text("x1", { size: 14 }),
+        pos(132, 24),
+        anchor("left"),
+        color(239, 215, 159),
+        fixed(),
+        z(101),
+    ]);
+
+    add([
+        sprite("firePower"),
+        pos(180, 24),
+        anchor("center"),
+        scale(1.3),
+        fixed(),
+        z(101),
+    ]);
+    const fireCountText = add([
+        text("x2", { size: 14 }),
+        pos(196, 24),
+        anchor("left"),
+        color(239, 195, 120),
+        fixed(),
+        z(101),
+    ]);
+
+    add([
+        text("ESC", { size: 10 }),
+        pos(width() - 10, 12),
+        anchor("right"),
+        color(182, 116, 150),
+        fixed(),
+        z(101),
+    ]);
+    add([
+        text("PAUSA", { size: 10 }),
+        pos(width() - 10, 25),
+        anchor("right"),
+        color(133, 111, 128),
+        fixed(),
+        z(101),
+    ]);
+
     const player = add([
         sprite("player"),
-        pos(TILE_SIZE + TILE_SIZE / 2, TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y),
-        area({ shape: new Rect(vec2(3, 3), 10, 10) }),
+        pos(worldPos(1, 1)),
+        area({ shape: new Rect(vec2(3, 2), 10, 13) }),
         body(),
         anchor("center"),
+        z(20),
         "player",
-        { speed: 120 },
+        {
+            speed: 120,
+            passThroughBomb: null,
+        },
     ]);
-    
+
     function updateHearts() {
-        hearts.forEach((h, i) => {
-            if (i < lives) {
-                h.use(sprite("heart"));
-            } else {
-                h.use(sprite("heartEmpty"));
-            }
+        hearts.forEach((heart, index) => {
+            heart.use(sprite(index < lives ? "heart" : "heartEmpty"));
         });
     }
-    
+
     function updateStats() {
-        bombCount.text = maxBombs.toString();
-        fireCount.text = firePower.toString();
+        bombCountText.text = `x${maxBombs}`;
+        fireCountText.text = `x${firePower}`;
     }
-    
-    function respawnPlayer() {
-        player.pos = vec2(TILE_SIZE + TILE_SIZE / 2, TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y);
-    }
-    
-    onUpdate(() => {
-        if (isPaused) return;
-        
-        let dirX = 0;
-        let dirY = 0;
-        
-        if (isKeyDown("left") || isKeyDown("a")) dirX = -1;
-        else if (isKeyDown("right") || isKeyDown("d")) dirX = 1;
-        else if (isKeyDown("up") || isKeyDown("w")) dirY = -1;
-        else if (isKeyDown("down") || isKeyDown("s")) dirY = 1;
-        
-        if (dirX !== 0 || dirY !== 0) {
-            const playerGridX = Math.round((player.pos.x - TILE_SIZE / 2) / TILE_SIZE);
-            const playerGridY = Math.round((player.pos.y - MAP_OFFSET_Y - TILE_SIZE / 2) / TILE_SIZE);
-            
-            const nextGridX = playerGridX + dirX;
-            const nextGridY = playerGridY + dirY;
-            
-            const bombs = get("bombObstacle");
-            const bombOnNext = bombs.find(b => b.gridX === nextGridX && b.gridY === nextGridY);
-            
-            if (!bombOnNext) {
-                player.move(dirX * player.speed, dirY * player.speed);
-            }
-        }
-    });
-    
-    function placeBomb() {
-        if (isPaused) return;
-        
-        const bombs = get("bombObstacle");
-        if (bombs.length >= maxBombs) return;
-        
-        const relX = player.pos.x - TILE_SIZE / 2;
-        const relY = player.pos.y - MAP_OFFSET_Y - TILE_SIZE / 2;
-        
-        const gx = Math.round(relX / TILE_SIZE);
-        const gy = Math.round(relY / TILE_SIZE);
-        
-        const existingBomb = bombs.find(b => b.gridX === gx && b.gridY === gy);
-        if (existingBomb) return;
-        
-        const bombX = gx * TILE_SIZE + TILE_SIZE / 2;
-        const bombY = gy * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y;
-        
-        const bomb = add([
-            sprite("bomb"),
-            pos(bombX, bombY),
-            area(),
+
+    function showToast(message, tint) {
+        const toast = add([
+            text(message, { size: 14 }),
+            pos(width() / 2, 56),
             anchor("center"),
-            "bombObstacle",
-            { gridX: gx, gridY: gy, range: firePower },
+            color(tint[0], tint[1], tint[2]),
+            fixed(),
+            z(140),
+            move(UP, 16),
+            opacity(1),
+            "toast",
         ]);
-        
-        wait(3, () => {
-            if (bomb.exists()) {
-                explodeBomb(bomb);
-            }
+
+        wait(0.7, () => {
+            if (toast.exists()) destroy(toast);
         });
     }
-    
-    onKeyPress("space", placeBomb);
-    onKeyPress("z", placeBomb);
-    onKeyPress("x", placeBomb);
-    
+
+    function tileHasBomb(gx, gy) {
+        return get("bomb").find((bomb) => bomb.gridX === gx && bomb.gridY === gy);
+    }
+
+    function tileBlockedForEnemy(gx, gy) {
+        if (!inBounds(gx, gy)) return true;
+        if (gameMap[gy][gx] === SOLID || gameMap[gy][gx] === DESTRUCTIBLE) return true;
+        return Boolean(tileHasBomb(gx, gy));
+    }
+
     function spawnExplosion(gx, gy) {
         const exp = add([
             sprite("explosion"),
-            pos(gx * TILE_SIZE + TILE_SIZE / 2, gy * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y),
-            area({ shape: new Rect(vec2(-6, -6), 12, 12) }),
+            pos(worldPos(gx, gy)),
+            area({ shape: new Rect(vec2(-7, -7), 14, 14) }),
             anchor("center"),
+            z(30),
             "explosion",
-            "killZone",
         ]);
-        
-        wait(0.5, () => {
+
+        wait(0.45, () => {
             if (exp.exists()) destroy(exp);
         });
-        
-        return exp;
     }
-    
+
     function spawnPowerup(gx, gy) {
-        const rand = Math.random();
-        let type, spriteName;
-        
-        if (rand < 0.5) {
-            type = BOMB_POWERUP;
-            spriteName = "bombPower";
-        } else {
-            type = FIRE_POWERUP;
-            spriteName = "firePower";
-        }
-        
-        const powerup = add([
-            sprite(spriteName),
-            pos(gx * TILE_SIZE + TILE_SIZE / 2, gy * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y),
-            area(),
+        if (Math.random() > 0.55) return;
+
+        const kind = Math.random() < 0.5 ? POWER_BOMB : POWER_FIRE;
+        add([
+            sprite(kind === POWER_BOMB ? "bombPower" : "firePower"),
+            pos(worldPos(gx, gy)),
+            area({ shape: new Rect(vec2(-6, -6), 12, 12) }),
             anchor("center"),
+            z(12),
             "powerup",
-            { powerType: type },
+            { powerType: kind },
         ]);
     }
-    
+
     function explodeBomb(bomb) {
-        const gx = bomb.gridX;
-        const gy = bomb.gridY;
-        const range = bomb.range || 2;
+        if (!bomb.exists()) return;
+
+        const { gridX, gridY, range } = bomb;
         destroy(bomb);
-        
-        spawnExplosion(gx, gy);
-        
-        const directions = [
-            { dx: 0, dy: -1 },
-            { dx: 0, dy: 1 },
-            { dx: -1, dy: 0 },
-            { dx: 1, dy: 0 },
+
+        if (player.passThroughBomb === bomb) {
+            player.passThroughBomb = null;
+        }
+
+        spawnExplosion(gridX, gridY);
+
+        const dirs = [
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+            { x: 0, y: 1 },
+            { x: 0, y: -1 },
         ];
-        
-        directions.forEach(dir => {
-            for (let i = 1; i <= range; i++) {
-                const nx = gx + dir.dx * i;
-                const ny = gy + dir.dy * i;
-                
-                if (nx < 0 || nx >= MAP_WIDTH || ny < 0 || ny >= MAP_HEIGHT) break;
+
+        dirs.forEach((dir) => {
+            for (let step = 1; step <= range; step++) {
+                const nx = gridX + dir.x * step;
+                const ny = gridY + dir.y * step;
+
+                if (!inBounds(nx, ny)) break;
                 if (gameMap[ny][nx] === SOLID) break;
-                
+
                 spawnExplosion(nx, ny);
-                
+
                 if (gameMap[ny][nx] === DESTRUCTIBLE) {
                     gameMap[ny][nx] = EMPTY;
-                    
-                    get("destructible").forEach(box => {
+                    get("destructible").forEach((box) => {
                         if (box.gridX === nx && box.gridY === ny) {
                             destroy(box);
-                            if (Math.random() < 0.6) {
-                                spawnPowerup(nx, ny);
-                            }
+                            spawnPowerup(nx, ny);
                         }
                     });
                     break;
                 }
-                
-                const chainBomb = get("bombObstacle").find(b => b.gridX === nx && b.gridY === ny);
-                if (chainBomb) {
-                    wait(0.1, () => {
-                        if (chainBomb.exists()) explodeBomb(chainBomb);
-                    });
+
+                const otherBomb = tileHasBomb(nx, ny);
+                if (otherBomb) {
+                    wait(0.05, () => explodeBomb(otherBomb));
                     break;
                 }
             }
         });
     }
-    
-    player.onCollide("powerup", (powerup) => {
-        if (powerup.powerType === BOMB_POWERUP) {
-            maxBombs++;
-            updateStats();
-        } else if (powerup.powerType === FIRE_POWERUP) {
-            firePower++;
-            updateStats();
+
+    function placeBomb() {
+        if (isPaused) return;
+
+        const activeBombs = get("bomb");
+        if (activeBombs.length >= maxBombs) return;
+
+        const { x, y } = gridFromPos(player.pos);
+        if (!inBounds(x, y) || tileHasBomb(x, y)) return;
+
+        const bomb = add([
+            sprite("bomb"),
+            pos(worldPos(x, y)),
+            area({ shape: new Rect(vec2(-6, -6), 12, 12) }),
+            anchor("center"),
+            z(18),
+            "bomb",
+            { gridX: x, gridY: y, range: firePower },
+        ]);
+
+        player.passThroughBomb = bomb;
+
+        wait(3, () => explodeBomb(bomb));
+    }
+
+    function respawnPlayer() {
+        player.pos = worldPos(1, 1);
+        player.passThroughBomb = null;
+    }
+
+    onUpdate(() => {
+        if (isPaused) return;
+
+        if (player.passThroughBomb) {
+            if (!player.passThroughBomb.exists()) {
+                player.passThroughBomb = null;
+            } else {
+                const currentGrid = gridFromPos(player.pos);
+                if (currentGrid.x !== player.passThroughBomb.gridX || currentGrid.y !== player.passThroughBomb.gridY) {
+                    player.passThroughBomb = null;
+                }
+            }
         }
-        destroy(powerup);
+
+        let dirX = 0;
+        let dirY = 0;
+
+        if (isKeyDown("left") || isKeyDown("a")) dirX = -1;
+        else if (isKeyDown("right") || isKeyDown("d")) dirX = 1;
+        else if (isKeyDown("up") || isKeyDown("w")) dirY = -1;
+        else if (isKeyDown("down") || isKeyDown("s")) dirY = 1;
+
+        if (dirX !== 0 || dirY !== 0) {
+            const currentGrid = gridFromPos(player.pos);
+            const nextGridX = currentGrid.x + dirX;
+            const nextGridY = currentGrid.y + dirY;
+            const bombOnNext = tileHasBomb(nextGridX, nextGridY);
+            const canCrossBomb = bombOnNext && player.passThroughBomb === bombOnNext;
+
+            if (!bombOnNext || canCrossBomb) {
+                player.move(dirX * player.speed, dirY * player.speed);
+            }
+        }
     });
-    
-    const zombieConfigs = [];
-    
-    const corners = [
+
+    const spawnCandidates = [
         { x: MAP_WIDTH - 3, y: MAP_HEIGHT - 3 },
         { x: MAP_WIDTH - 3, y: 3 },
         { x: 3, y: MAP_HEIGHT - 3 },
     ];
-    
-    corners.forEach(corner => {
+
+    const zombieSpawns = [];
+    spawnCandidates.forEach((origin) => {
         let placed = false;
-        for (let dy = 0; dy <= 2 && !placed; dy++) {
-            for (let dx = 0; dx <= 2 && !placed; dx++) {
-                const x = corner.x + dx;
-                const y = corner.y + dy;
-                if (gameMap[y] && gameMap[y][x] === EMPTY) {
-                    zombieConfigs.push({ x, y });
+        for (let dy = -1; dy <= 1 && !placed; dy++) {
+            for (let dx = -1; dx <= 1 && !placed; dx++) {
+                const x = origin.x + dx;
+                const y = origin.y + dy;
+                if (inBounds(x, y) && gameMap[y][x] === EMPTY) {
+                    zombieSpawns.push({ x, y });
                     placed = true;
                 }
             }
         }
     });
-    
-    zombieConfigs.forEach(cfg => {
-        const zombie = add([
+
+    zombieSpawns.forEach((spawn) => {
+        add([
             sprite("zombie"),
-            pos(cfg.x * TILE_SIZE + TILE_SIZE / 2, cfg.y * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y),
-            area({ shape: new Rect(vec2(3, 3), 10, 10) }),
-            body(),
+            pos(worldPos(spawn.x, spawn.y)),
+            area({ shape: new Rect(vec2(3, 2), 10, 13) }),
             anchor("center"),
+            z(20),
             "zombie",
-            { 
-                speed: 50,
-                direction: choose(["up", "down", "left", "right"]),
-                moveTimer: rand(1, 2),
+            {
+                speed: 42,
+                direction: choose(["left", "right", "up", "down"]),
+                moveTimer: rand(0.4, 1.4),
             },
         ]);
     });
-    
+
+    function chooseOpenDirection(zombie) {
+        const current = gridFromPos(zombie.pos);
+        const options = [
+            { name: "left", x: -1, y: 0 },
+            { name: "right", x: 1, y: 0 },
+            { name: "up", x: 0, y: -1 },
+            { name: "down", x: 0, y: 1 },
+        ].filter((dir) => !tileBlockedForEnemy(current.x + dir.x, current.y + dir.y));
+
+        if (options.length > 0) {
+            zombie.direction = choose(options).name;
+        }
+    }
+
     onUpdate("zombie", (zombie) => {
         if (isPaused) return;
-        
+
         zombie.moveTimer -= dt();
-        
         if (zombie.moveTimer <= 0) {
-            zombie.moveTimer = rand(1, 3);
-            zombie.direction = choose(["up", "down", "left", "right"]);
+            zombie.moveTimer = rand(0.5, 1.6);
+            if (Math.random() < 0.55) {
+                chooseOpenDirection(zombie);
+            }
         }
-        
-        const oldPos = zombie.pos.clone();
-        let dirX = 0, dirY = 0;
-        
-        if (zombie.direction === "left") dirX = -1;
-        else if (zombie.direction === "right") dirX = 1;
-        else if (zombie.direction === "up") dirY = -1;
-        else if (zombie.direction === "down") dirY = 1;
-        
-        zombie.move(dirX * zombie.speed, dirY * zombie.speed);
-        
-        const gx = Math.floor((zombie.pos.x - TILE_SIZE / 2) / TILE_SIZE);
-        const gy = Math.floor((zombie.pos.y - MAP_OFFSET_Y - TILE_SIZE / 2) / TILE_SIZE);
-        
-        if (gx < 1 || gx >= MAP_WIDTH - 1 || gy < 1 || gy >= MAP_HEIGHT - 1) {
-            zombie.pos = oldPos;
-            zombie.direction = choose(["up", "down", "left", "right"]);
+
+        let dir = { x: 0, y: 0 };
+        if (zombie.direction === "left") dir = { x: -1, y: 0 };
+        if (zombie.direction === "right") dir = { x: 1, y: 0 };
+        if (zombie.direction === "up") dir = { x: 0, y: -1 };
+        if (zombie.direction === "down") dir = { x: 0, y: 1 };
+
+        const nextPos = zombie.pos.add(vec2(dir.x * zombie.speed * dt(), dir.y * zombie.speed * dt()));
+        const currentGrid = gridFromPos(zombie.pos);
+        const nextGrid = gridFromPos(nextPos);
+
+        if ((nextGrid.x !== currentGrid.x || nextGrid.y !== currentGrid.y) && tileBlockedForEnemy(nextGrid.x, nextGrid.y)) {
+            chooseOpenDirection(zombie);
+            return;
         }
+
+        zombie.pos = nextPos;
     });
-    
-    player.onCollide("zombie", () => {
-        playerHit();
-    });
-    
-    onCollide("zombie", "bombObstacle", (zombie) => {
-        zombie.direction = choose(["up", "down", "left", "right"]);
-    });
-    
-    player.onCollide("explosion", () => {
-        playerHit();
-    });
-    
-    let isInvincible = false;
-    
-    function playerHit() {
-        if (isPaused || isInvincible) return;
-        
-        lives--;
-        updateHearts();
-        
-        if (lives <= 0) {
-            gameOver();
+
+    player.onCollide("powerup", (powerup) => {
+        if (powerup.powerType === POWER_BOMB) {
+            maxBombs += 1;
+            updateStats();
+            showToast("+ Bomba", [239, 215, 159]);
         } else {
-            isInvincible = true;
-            
-            add([
-                text("OUCH!", { size: 24 }),
-                pos(width() / 2, height() / 2),
-                anchor("center"),
-                color(255, 50, 50),
-                fixed(),
-                z(200),
-                "hitText",
-            ]);
-            
-            player.hidden = true;
-            
-            wait(1, () => {
-                get("hitText").forEach(e => destroy(e));
-                respawnPlayer();
-                player.hidden = false;
-                
-                let blinkCount = 0;
-                const blinkInterval = setInterval(() => {
-                    player.hidden = !player.hidden;
-                    blinkCount++;
-                    if (blinkCount >= 10) {
-                        clearInterval(blinkInterval);
-                        player.hidden = false;
-                        isInvincible = false;
-                    }
-                }, 100);
-            });
+            firePower += 1;
+            updateStats();
+            showToast("+ Fogo", [255, 168, 87]);
         }
-    }
-    
-    function gameOver() {
+        destroy(powerup);
+    });
+
+    function endRun(message, tint, restartDelay) {
+        clearTag("pauseUI");
         add([
-            text("GAME OVER", { size: 48 }),
+            sprite("pausePanel"),
             pos(width() / 2, height() / 2),
             anchor("center"),
-            color(200, 50, 50),
             fixed(),
-            z(200),
+            z(150),
+            "resultUI",
         ]);
-        
-        wait(2, () => {
-            go("game");
+        add([
+            text(message, { size: 28 }),
+            pos(width() / 2, height() / 2 - 16),
+            anchor("center"),
+            color(tint[0], tint[1], tint[2]),
+            fixed(),
+            z(151),
+            "resultUI",
+        ]);
+        add([
+            text("Reiniciando...", { size: 11 }),
+            pos(width() / 2, height() / 2 + 18),
+            anchor("center"),
+            color(196, 173, 186),
+            fixed(),
+            z(151),
+            "resultUI",
+        ]);
+        wait(restartDelay, () => go("game"));
+    }
+
+    function playerHit() {
+        if (isPaused || isInvincible) return;
+
+        lives -= 1;
+        updateHearts();
+
+        if (lives <= 0) {
+            endRun("GAME OVER", [219, 76, 98], 2);
+            return;
+        }
+
+        isInvincible = true;
+        player.hidden = true;
+        showToast("Vida perdida", [219, 76, 98]);
+
+        wait(0.7, () => {
+            respawnPlayer();
+            player.hidden = false;
+
+            let flashes = 0;
+            const blink = setInterval(() => {
+                player.hidden = !player.hidden;
+                flashes += 1;
+                if (flashes >= 10) {
+                    clearInterval(blink);
+                    player.hidden = false;
+                    isInvincible = false;
+                }
+            }, 100);
         });
     }
-    
+
     function checkWin() {
-        const zombies = get("zombie");
-        if (zombies.length === 0) {
-            add([
-                text("YOU WIN!", { size: 48 }),
-                pos(width() / 2, height() / 2),
-                anchor("center"),
-                color(255, 215, 0),
-                fixed(),
-                z(200),
-            ]);
-            wait(2, () => go("game"));
+        if (get("zombie").length === 0) {
+            endRun("VOCE VENCEU", [236, 208, 122], 2);
         }
     }
-    
-    onCollide("explosion", "zombie", (exp, zombie) => {
-        destroy(zombie);
+
+    player.onCollide("zombie", () => playerHit());
+    player.onCollide("explosion", () => playerHit());
+
+    onCollide("explosion", "zombie", (_exp, zombie) => {
+        if (zombie.exists()) destroy(zombie);
         checkWin();
     });
-    
+
     function togglePause() {
+        if (get("resultUI").length > 0) return;
+
         isPaused = !isPaused;
-        
-        get("pauseUI").forEach(e => destroy(e));
-        
-        if (isPaused) {
-            add([
-                rect(width(), height()),
-                pos(0, 0),
-                color(0, 0, 0),
-                opacity(0.7),
-                fixed(),
-                z(150),
-                "pauseUI",
-            ]);
-            
-            add([
-                text("PAUSED", { size: 48 }),
-                pos(width() / 2, height() / 2 - 30),
-                anchor("center"),
-                color(200, 150, 200),
-                fixed(),
-                z(151),
-                "pauseUI",
-            ]);
-            
-            add([
-                text("Press ESC to resume", { size: 16 }),
-                pos(width() / 2, height() / 2 + 20),
-                anchor("center"),
-                color(150, 100, 150),
-                fixed(),
-                z(151),
-                "pauseUI",
-            ]);
-            
-            add([
-                text("Press R to restart", { size: 16 }),
-                pos(width() / 2, height() / 2 + 50),
-                anchor("center"),
-                color(150, 100, 150),
-                fixed(),
-                z(151),
-                "pauseUI",
-            ]);
-        }
+        clearTag("pauseUI");
+
+        if (!isPaused) return;
+
+        add([
+            rect(width(), height()),
+            pos(0, 0),
+            color(0, 0, 0),
+            opacity(0.62),
+            fixed(),
+            z(130),
+            "pauseUI",
+        ]);
+        add([
+            sprite("pausePanel"),
+            pos(width() / 2, height() / 2),
+            anchor("center"),
+            fixed(),
+            z(131),
+            "pauseUI",
+        ]);
+        add([
+            text("PAUSADO", { size: 30 }),
+            pos(width() / 2, height() / 2 - 22),
+            anchor("center"),
+            color(236, 208, 122),
+            fixed(),
+            z(132),
+            "pauseUI",
+        ]);
+        add([
+            text("ESC para voltar", { size: 12 }),
+            pos(width() / 2, height() / 2 + 12),
+            anchor("center"),
+            color(196, 173, 186),
+            fixed(),
+            z(132),
+            "pauseUI",
+        ]);
+        add([
+            text("R para reiniciar", { size: 12 }),
+            pos(width() / 2, height() / 2 + 32),
+            anchor("center"),
+            color(196, 173, 186),
+            fixed(),
+            z(132),
+            "pauseUI",
+        ]);
     }
-    
+
+    onKeyPress("space", placeBomb);
+    onKeyPress("z", placeBomb);
+    onKeyPress("x", placeBomb);
     onKeyPress("escape", togglePause);
     onKeyPress("p", togglePause);
-    
     onKeyPress("r", () => {
-        if (isPaused) {
-            go("game");
-        }
+        if (isPaused) go("game");
     });
-});
 
-scene("menu", () => {
-    add([
-        rect(width(), height()),
-        pos(0, 0),
-        color(15, 5, 15),
-    ]);
-    
-    add([
-        text("CASTLEVANIA", { size: 36 }),
-        pos(width() / 2, 50),
-        anchor("center"),
-        color(150, 50, 150),
-    ]);
-    
-    add([
-        text("BOMBERMAN", { size: 28 }),
-        pos(width() / 2, 85),
-        anchor("center"),
-        color(100, 30, 100),
-    ]);
-    
-    const menuOptions = [
-        { text: "START GAME", scene: "game" },
-        { text: "CONTROLS", scene: "controls" },
-    ];
-    
-    let selectedIndex = 0;
-    
-    const menuItems = [];
-    
-    menuOptions.forEach((opt, i) => {
-        const item = add([
-            text(opt.text, { size: 20 }),
-            pos(width() / 2, 180 + i * 40),
-            anchor("center"),
-            color(150, 100, 150),
-            "menuItem",
-            { index: i },
-        ]);
-        menuItems.push(item);
-    });
-    
-    function updateMenuSelection() {
-        menuItems.forEach((item, i) => {
-            if (i === selectedIndex) {
-                item.color = rgb(255, 215, 0);
-                item.text = "> " + menuOptions[i].text + " <";
-            } else {
-                item.color = rgb(150, 100, 150);
-                item.text = menuOptions[i].text;
-            }
-        });
-    }
-    
-    updateMenuSelection();
-    
-    onKeyPress("up", () => {
-        selectedIndex = (selectedIndex - 1 + menuOptions.length) % menuOptions.length;
-        updateMenuSelection();
-    });
-    
-    onKeyPress("down", () => {
-        selectedIndex = (selectedIndex + 1) % menuOptions.length;
-        updateMenuSelection();
-    });
-    
-    onKeyPress("enter", () => {
-        go(menuOptions[selectedIndex].scene);
-    });
-    
-    onKeyPress("space", () => {
-        go(menuOptions[selectedIndex].scene);
-    });
-});
-
-scene("controls", () => {
-    add([
-        rect(width(), height()),
-        pos(0, 0),
-        color(15, 5, 15),
-    ]);
-    
-    add([
-        text("CONTROLS", { size: 28 }),
-        pos(width() / 2, 30),
-        anchor("center"),
-        color(150, 50, 150),
-    ]);
-    
-    const controls = [
-        { key: "ARROWS / WASD", action: "Move" },
-        { key: "SPACE / Z / X", action: "Place Bomb" },
-        { key: "ESC / P", action: "Pause" },
-    ];
-    
-    controls.forEach((ctrl, i) => {
-        add([
-            text(ctrl.key, { size: 14 }),
-            pos(width() / 2 - 80, 90 + i * 40),
-            anchor("left"),
-            color(200, 180, 100),
-        ]);
-        
-        add([
-            text(ctrl.action, { size: 14 }),
-            pos(width() / 2 + 80, 90 + i * 40),
-            anchor("right"),
-            color(150, 150, 150),
-        ]);
-    });
-    
-    add([
-        text("PRESS ENTER TO GO BACK", { size: 12 }),
-        pos(width() / 2, height() - 30),
-        anchor("center"),
-        color(100, 80, 100),
-    ]);
-    
-    onKeyPress("enter", () => {
-        go("menu");
-    });
-    
-    onKeyPress("escape", () => {
-        go("menu");
-    });
-    
-    onKeyPress("space", () => {
-        go("menu");
-    });
+    updateHearts();
+    updateStats();
 });
 
 go("menu");
