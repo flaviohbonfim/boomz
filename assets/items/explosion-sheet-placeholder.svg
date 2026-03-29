@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="80" viewBox="0 0 48 80" shape-rendering="crispEdges">
+  <defs>
+    <g id="c0">
+      <rect x="6" y="1" width="4" height="14" fill="#82cfff"/>
+      <rect x="1" y="6" width="14" height="4" fill="#82cfff"/>
+      <rect x="5" y="3" width="6" height="10" fill="#4aa8ff"/>
+      <rect x="3" y="5" width="10" height="6" fill="#4aa8ff"/>
+      <rect x="6" y="6" width="4" height="4" fill="#ffffff"/>
+    </g>
+    <g id="c1">
+      <rect x="6" y="2" width="4" height="12" fill="#d7f5ff"/>
+      <rect x="2" y="6" width="12" height="4" fill="#d7f5ff"/>
+      <rect x="5" y="4" width="6" height="8" fill="#4aa8ff"/>
+      <rect x="4" y="5" width="8" height="6" fill="#4aa8ff"/>
+      <rect x="6" y="6" width="4" height="4" fill="#ffffff"/>
+    </g>
+    <g id="c2">
+      <rect x="6" y="3" width="4" height="10" fill="#d7f5ff"/>
+      <rect x="3" y="6" width="10" height="4" fill="#d7f5ff"/>
+      <rect x="5" y="5" width="6" height="6" fill="#4aa8ff"/>
+      <rect x="7" y="7" width="2" height="2" fill="#ffffff"/>
+    </g>
+    <g id="hm0">
+      <rect x="0" y="6" width="16" height="4" fill="#82cfff"/>
+      <rect x="1" y="5" width="14" height="6" fill="#4aa8ff"/>
+      <rect x="3" y="6" width="10" height="4" fill="#ffffff"/>
+    </g>
+    <g id="hm1">
+      <rect x="1" y="6" width="14" height="4" fill="#d7f5ff"/>
+      <rect x="2" y="5" width="12" height="6" fill="#4aa8ff"/>
+      <rect x="4" y="6" width="8" height="4" fill="#ffffff"/>
+    </g>
+    <g id="hm2">
+      <rect x="2" y="6" width="12" height="4" fill="#d7f5ff"/>
+      <rect x="3" y="6" width="10" height="4" fill="#4aa8ff"/>
+      <rect x="5" y="7" width="6" height="2" fill="#ffffff"/>
+    </g>
+    <g id="vm0">
+      <rect x="6" y="0" width="4" height="16" fill="#82cfff"/>
+      <rect x="5" y="1" width="6" height="14" fill="#4aa8ff"/>
+      <rect x="6" y="3" width="4" height="10" fill="#ffffff"/>
+    </g>
+    <g id="vm1">
+      <rect x="6" y="1" width="4" height="14" fill="#d7f5ff"/>
+      <rect x="5" y="2" width="6" height="12" fill="#4aa8ff"/>
+      <rect x="6" y="4" width="4" height="8" fill="#ffffff"/>
+    </g>
+    <g id="vm2">
+      <rect x="6" y="2" width="4" height="12" fill="#d7f5ff"/>
+      <rect x="6" y="3" width="4" height="10" fill="#4aa8ff"/>
+      <rect x="7" y="5" width="2" height="6" fill="#ffffff"/>
+    </g>
+    <g id="he0">
+      <rect x="0" y="6" width="10" height="4" fill="#82cfff"/>
+      <polygon points="9,3 15,8 9,13" fill="#82cfff"/>
+      <rect x="1" y="5" width="9" height="6" fill="#4aa8ff"/>
+      <polygon points="8,4 14,8 8,12" fill="#4aa8ff"/>
+      <rect x="2" y="6" width="7" height="4" fill="#ffffff"/>
+      <polygon points="8,5 12,8 8,11" fill="#ffffff"/>
+    </g>
+    <g id="he1">
+      <rect x="1" y="6" width="9" height="4" fill="#d7f5ff"/>
+      <polygon points="9,4 14,8 9,12" fill="#d7f5ff"/>
+      <rect x="2" y="5" width="8" height="6" fill="#4aa8ff"/>
+      <polygon points="8,5 13,8 8,11" fill="#4aa8ff"/>
+      <rect x="3" y="6" width="6" height="4" fill="#ffffff"/>
+      <polygon points="8,6 11,8 8,10" fill="#ffffff"/>
+    </g>
+    <g id="he2">
+      <rect x="2" y="6" width="8" height="4" fill="#d7f5ff"/>
+      <polygon points="8,5 12,8 8,11" fill="#d7f5ff"/>
+      <rect x="3" y="6" width="7" height="4" fill="#4aa8ff"/>
+      <polygon points="8,6 11,8 8,10" fill="#4aa8ff"/>
+      <rect x="4" y="7" width="5" height="2" fill="#ffffff"/>
+    </g>
+    <g id="ve0">
+      <rect x="6" y="0" width="4" height="10" fill="#82cfff"/>
+      <polygon points="3,9 8,15 13,9" fill="#82cfff"/>
+      <rect x="5" y="1" width="6" height="9" fill="#4aa8ff"/>
+      <polygon points="4,8 8,14 12,8" fill="#4aa8ff"/>
+      <rect x="6" y="2" width="4" height="7" fill="#ffffff"/>
+      <polygon points="5,8 8,12 11,8" fill="#ffffff"/>
+    </g>
+    <g id="ve1">
+      <rect x="6" y="1" width="4" height="9" fill="#d7f5ff"/>
+      <polygon points="4,9 8,14 12,9" fill="#d7f5ff"/>
+      <rect x="5" y="2" width="6" height="8" fill="#4aa8ff"/>
+      <polygon points="5,9 8,13 11,9" fill="#4aa8ff"/>
+      <rect x="6" y="3" width="4" height="6" fill="#ffffff"/>
+      <polygon points="6,9 8,11 10,9" fill="#ffffff"/>
+    </g>
+    <g id="ve2">
+      <rect x="6" y="2" width="4" height="8" fill="#d7f5ff"/>
+      <polygon points="5,9 8,13 11,9" fill="#d7f5ff"/>
+      <rect x="6" y="3" width="4" height="7" fill="#4aa8ff"/>
+      <polygon points="6,9 8,11 10,9" fill="#4aa8ff"/>
+      <rect x="7" y="4" width="2" height="5" fill="#ffffff"/>
+    </g>
+  </defs>
+  <use href="#c0" x="0" y="0"/>
+  <use href="#c1" x="16" y="0"/>
+  <use href="#c2" x="32" y="0"/>
+  <use href="#hm0" x="0" y="16"/>
+  <use href="#hm1" x="16" y="16"/>
+  <use href="#hm2" x="32" y="16"/>
+  <use href="#vm0" x="0" y="32"/>
+  <use href="#vm1" x="16" y="32"/>
+  <use href="#vm2" x="32" y="32"/>
+  <use href="#he0" x="0" y="48"/>
+  <use href="#he1" x="16" y="48"/>
+  <use href="#he2" x="32" y="48"/>
+  <use href="#ve0" x="0" y="64"/>
+  <use href="#ve1" x="16" y="64"/>
+  <use href="#ve2" x="32" y="64"/>
+</svg>

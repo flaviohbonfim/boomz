@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="168" viewBox="0 0 96 168" shape-rendering="crispEdges">
+  <defs>
+    <g id="zd0">
+      <rect x="7" y="2" width="10" height="5" fill="#2c3f2b"/>
+      <rect x="8" y="3" width="8" height="4" fill="#82b27f"/>
+      <rect x="9" y="4" width="1" height="1" fill="#e16068"/>
+      <rect x="14" y="4" width="1" height="1" fill="#e16068"/>
+      <rect x="6" y="8" width="12" height="7" fill="#2c3f2b"/>
+      <rect x="9" y="9" width="6" height="6" fill="#576b72"/>
+      <rect x="4" y="9" width="3" height="5" fill="#2c3f2b"/>
+      <rect x="18" y="10" width="2" height="5" fill="#2c3f2b"/>
+      <rect x="7" y="15" width="4" height="6" fill="#1a1618"/>
+      <rect x="13" y="15" width="4" height="6" fill="#1a1618"/>
+    </g>
+    <g id="zd1">
+      <rect x="7" y="3" width="10" height="5" fill="#2c3f2b"/>
+      <rect x="8" y="4" width="8" height="4" fill="#82b27f"/>
+      <rect x="9" y="5" width="1" height="1" fill="#e16068"/>
+      <rect x="14" y="5" width="1" height="1" fill="#e16068"/>
+      <rect x="6" y="9" width="12" height="7" fill="#2c3f2b"/>
+      <rect x="9" y="10" width="6" height="6" fill="#576b72"/>
+      <rect x="3" y="10" width="3" height="5" fill="#2c3f2b"/>
+      <rect x="17" y="11" width="3" height="5" fill="#2c3f2b"/>
+      <rect x="6" y="16" width="4" height="5" fill="#1a1618"/>
+      <rect x="14" y="16" width="4" height="5" fill="#1a1618"/>
+    </g>
+    <g id="zd2">
+      <use href="#zd0"/>
+      <rect x="4" y="9" width="3" height="5" fill="#00000000"/>
+      <rect x="8" y="15" width="3" height="6" fill="#00000000"/>
+      <rect x="5" y="9" width="3" height="5" fill="#2c3f2b"/>
+      <rect x="8" y="15" width="3" height="6" fill="#1a1618"/>
+    </g>
+    <g id="zd3">
+      <use href="#zd1"/>
+      <rect x="17" y="11" width="3" height="5" fill="#00000000"/>
+      <rect x="14" y="16" width="4" height="5" fill="#00000000"/>
+      <rect x="16" y="10" width="3" height="5" fill="#2c3f2b"/>
+      <rect x="13" y="16" width="4" height="5" fill="#1a1618"/>
+    </g>
+    <g id="zs0">
+      <rect x="7" y="2" width="9" height="5" fill="#2c3f2b"/>
+      <rect x="9" y="3" width="6" height="4" fill="#82b27f"/>
+      <rect x="13" y="4" width="1" height="1" fill="#e16068"/>
+      <rect x="8" y="8" width="8" height="7" fill="#2c3f2b"/>
+      <rect x="9" y="9" width="5" height="6" fill="#576b72"/>
+      <rect x="8" y="10" width="2" height="5" fill="#2c3f2b"/>
+      <rect x="15" y="9" width="2" height="4" fill="#2c3f2b"/>
+      <rect x="9" y="15" width="3" height="6" fill="#1a1618"/>
+      <rect x="13" y="15" width="3" height="6" fill="#1a1618"/>
+    </g>
+    <g id="zs1">
+      <rect x="7" y="3" width="9" height="5" fill="#2c3f2b"/>
+      <rect x="9" y="4" width="6" height="4" fill="#82b27f"/>
+      <rect x="13" y="5" width="1" height="1" fill="#e16068"/>
+      <rect x="8" y="9" width="8" height="7" fill="#2c3f2b"/>
+      <rect x="9" y="10" width="5" height="6" fill="#576b72"/>
+      <rect x="7" y="11" width="2" height="5" fill="#2c3f2b"/>
+      <rect x="15" y="10" width="2" height="4" fill="#2c3f2b"/>
+      <rect x="8" y="16" width="3" height="5" fill="#1a1618"/>
+      <rect x="14" y="16" width="3" height="5" fill="#1a1618"/>
+    </g>
+    <g id="zs2"><use href="#zs0"/><rect x="8" y="10" width="2" height="5" fill="#00000000"/><rect x="7" y="10" width="2" height="5" fill="#2c3f2b"/></g>
+    <g id="zs3"><use href="#zs1"/><rect x="7" y="11" width="2" height="5" fill="#00000000"/><rect x="8" y="11" width="2" height="5" fill="#2c3f2b"/></g>
+    <g id="zu0">
+      <rect x="7" y="2" width="10" height="4" fill="#2c3f2b"/>
+      <rect x="8" y="6" width="8" height="2" fill="#5f745f"/>
+      <rect x="6" y="8" width="12" height="7" fill="#2c3f2b"/>
+      <rect x="8" y="9" width="8" height="6" fill="#576b72"/>
+      <rect x="5" y="10" width="2" height="5" fill="#2c3f2b"/>
+      <rect x="17" y="10" width="2" height="5" fill="#2c3f2b"/>
+      <rect x="7" y="15" width="4" height="6" fill="#1a1618"/>
+      <rect x="13" y="15" width="4" height="6" fill="#1a1618"/>
+    </g>
+    <g id="zu1">
+      <rect x="7" y="3" width="10" height="4" fill="#2c3f2b"/>
+      <rect x="8" y="7" width="8" height="2" fill="#5f745f"/>
+      <rect x="6" y="9" width="12" height="7" fill="#2c3f2b"/>
+      <rect x="8" y="10" width="8" height="6" fill="#576b72"/>
+      <rect x="5" y="11" width="2" height="5" fill="#2c3f2b"/>
+      <rect x="17" y="11" width="2" height="5" fill="#2c3f2b"/>
+      <rect x="6" y="16" width="4" height="5" fill="#1a1618"/>
+      <rect x="14" y="16" width="4" height="5" fill="#1a1618"/>
+    </g>
+    <g id="zu2"><use href="#zu0"/><rect x="7" y="15" width="4" height="6" fill="#00000000"/><rect x="8" y="15" width="4" height="6" fill="#1a1618"/></g>
+    <g id="zu3"><use href="#zu1"/><rect x="14" y="16" width="4" height="5" fill="#00000000"/><rect x="13" y="16" width="4" height="5" fill="#1a1618"/></g>
+    <g id="zk0"><use href="#zd1"/></g>
+    <g id="zk1">
+      <rect x="7" y="5" width="10" height="4" fill="#2c3f2b"/>
+      <rect x="8" y="6" width="8" height="3" fill="#82b27f"/>
+      <rect x="6" y="10" width="12" height="5" fill="#576b72"/>
+      <rect x="8" y="15" width="8" height="3" fill="#1a1618"/>
+    </g>
+    <g id="zk2">
+      <polygon points="5,15 12,9 19,12 11,18" fill="#576b72"/>
+      <rect x="12" y="10" width="4" height="3" fill="#82b27f"/>
+      <rect x="12" y="9" width="4" height="1" fill="#2c3f2b"/>
+    </g>
+    <g id="zk3">
+      <rect x="5" y="15" width="14" height="3" fill="#394844"/>
+      <rect x="12" y="13" width="3" height="2" fill="#82b27f"/>
+    </g>
+  </defs>
+  <use href="#zd0" x="0" y="0"/>
+  <use href="#zd1" x="24" y="0"/>
+  <use href="#zd0" x="0" y="24"/>
+  <use href="#zd1" x="24" y="24"/>
+  <use href="#zd2" x="48" y="24"/>
+  <use href="#zd3" x="72" y="24"/>
+  <use href="#zs0" x="0" y="48"/>
+  <use href="#zs1" x="24" y="48"/>
+  <use href="#zs0" x="0" y="72"/>
+  <use href="#zs1" x="24" y="72"/>
+  <use href="#zs2" x="48" y="72"/>
+  <use href="#zs3" x="72" y="72"/>
+  <use href="#zu0" x="0" y="96"/>
+  <use href="#zu1" x="24" y="96"/>
+  <use href="#zu0" x="0" y="120"/>
+  <use href="#zu1" x="24" y="120"/>
+  <use href="#zu2" x="48" y="120"/>
+  <use href="#zu3" x="72" y="120"/>
+  <use href="#zk0" x="0" y="144"/>
+  <use href="#zk1" x="24" y="144"/>
+  <use href="#zk2" x="48" y="144"/>
+  <use href="#zk3" x="72" y="144"/>
+</svg>

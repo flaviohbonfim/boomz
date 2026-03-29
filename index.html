@@ -62,12 +62,51 @@ const MAP_OFFSET_Y = HUD_HEIGHT;
 const START_LIVES = 3;
 const START_BOMBS = 1;
 const START_FIRE = 2;
+const ACTOR_VISUAL_OFFSET = vec2(0, -6);
+const PLAYER_SHEET_PATH = "assets/characters/player-sheet-placeholder.svg";
+const ZOMBIE_SHEET_PATH = "assets/characters/zombie-sheet-placeholder.svg";
+const BOMB_SHEET_PATH = "assets/items/bomb-sheet-placeholder.svg";
+const EXPLOSION_SHEET_PATH = "assets/items/explosion-sheet-placeholder.svg";
 
 const SOLID = 1;
 const DESTRUCTIBLE = 2;
 const EMPTY = 0;
 const POWER_BOMB = "bomb";
 const POWER_FIRE = "fire";
+
+const PLAYER_ANIMS = {
+    "idle-down": { from: 0, to: 1, speed: 4, loop: true },
+    "walk-down": { from: 6, to: 9, speed: 10, loop: true },
+    "idle-side": { from: 12, to: 13, speed: 4, loop: true },
+    "walk-side": { from: 18, to: 21, speed: 10, loop: true },
+    "idle-up": { from: 24, to: 25, speed: 4, loop: true },
+    "walk-up": { from: 30, to: 33, speed: 10, loop: true },
+    hurt: { from: 36, to: 39, speed: 12, loop: false },
+    death: { from: 42, to: 47, speed: 8, loop: false },
+};
+
+const ZOMBIE_ANIMS = {
+    "idle-down": { from: 0, to: 1, speed: 3, loop: true },
+    "walk-down": { from: 4, to: 7, speed: 8, loop: true },
+    "idle-side": { from: 8, to: 9, speed: 3, loop: true },
+    "walk-side": { from: 12, to: 15, speed: 8, loop: true },
+    "idle-up": { from: 16, to: 17, speed: 3, loop: true },
+    "walk-up": { from: 20, to: 23, speed: 8, loop: true },
+    death: { from: 24, to: 27, speed: 8, loop: false },
+};
+
+const BOMB_ANIMS = {
+    fuse: { from: 0, to: 3, speed: 8, loop: true },
+    alert: { from: 4, to: 5, speed: 12, loop: true },
+};
+
+const EXPLOSION_ANIMS = {
+    center: { from: 0, to: 2, speed: 14, loop: false },
+    "horizontal-mid": { from: 3, to: 5, speed: 14, loop: false },
+    "vertical-mid": { from: 6, to: 8, speed: 14, loop: false },
+    "horizontal-end-right": { from: 9, to: 11, speed: 14, loop: false },
+    "vertical-end-down": { from: 12, to: 14, speed: 14, loop: false },
+};
 
 let gameMap = [];
 
@@ -84,6 +123,10 @@ function gridFromPos(pos) {
 
 function inBounds(gx, gy) {
     return gx >= 0 && gx < MAP_WIDTH && gy >= 0 && gy < MAP_HEIGHT;
+}
+
+function actorDepth(posY) {
+    return 20 + (posY - MAP_OFFSET_Y) / TILE_SIZE;
 }
 
 await Promise.all([
@@ -118,6 +161,26 @@ await Promise.all([
         explosion: { x: 16, y: 0, width: 16, height: 16 },
         bombPower: { x: 32, y: 0, width: 12, height: 12 },
         firePower: { x: 44, y: 0, width: 12, height: 12 },
+    }),
+    loadSprite("playerAnim", PLAYER_SHEET_PATH, {
+        sliceX: 6,
+        sliceY: 8,
+        anims: PLAYER_ANIMS,
+    }),
+    loadSprite("zombieAnim", ZOMBIE_SHEET_PATH, {
+        sliceX: 4,
+        sliceY: 7,
+        anims: ZOMBIE_ANIMS,
+    }),
+    loadSprite("bombAnim", BOMB_SHEET_PATH, {
+        sliceX: 6,
+        sliceY: 1,
+        anims: BOMB_ANIMS,
+    }),
+    loadSprite("explosionAnim", EXPLOSION_SHEET_PATH, {
+        sliceX: 3,
+        sliceY: 5,
+        anims: EXPLOSION_ANIMS,
     }),
 ]);
 
@@ -466,17 +529,78 @@ scene("game", () => {
 
     const player = add([
         sprite("player"),
+        opacity(0),
         pos(worldPos(1, 1)),
         area({ shape: new Rect(vec2(3, 2), 10, 13) }),
         body(),
         anchor("center"),
-        z(20),
+        z(actorDepth(worldPos(1, 1).y)),
         "player",
         {
             speed: 120,
             passThroughBomb: null,
+            facing: "down",
+            visualOffset: ACTOR_VISUAL_OFFSET,
+            isHidden: false,
         },
     ]);
+
+    function syncActorVisual(actor) {
+        if (!actor.visual || !actor.visual.exists()) return;
+        actor.visual.pos = actor.pos.add(actor.visualOffset);
+        actor.visual.z = actorDepth(actor.pos.y);
+        actor.visual.hidden = actor.isHidden;
+    }
+
+    function setActorHidden(actor, hidden) {
+        actor.isHidden = hidden;
+        if (actor.visual && actor.visual.exists()) {
+            actor.visual.hidden = hidden;
+        }
+    }
+
+    function playActorAnim(actor, animName, flipX = false, flipY = false) {
+        if (!actor.visual || !actor.visual.exists()) return;
+        if (actor.visual.animName !== animName) {
+            actor.visual.play(animName);
+            actor.visual.animName = animName;
+        }
+        actor.visual.flipX = flipX;
+        actor.visual.flipY = flipY;
+    }
+
+    function updateActorVisual(actor, moving) {
+        let animName = "idle-down";
+        let flipX = false;
+
+        if (actor.facing === "left") {
+            animName = moving ? "walk-side" : "idle-side";
+            flipX = true;
+        } else if (actor.facing === "right") {
+            animName = moving ? "walk-side" : "idle-side";
+        } else if (actor.facing === "up") {
+            animName = moving ? "walk-up" : "idle-up";
+        } else {
+            animName = moving ? "walk-down" : "idle-down";
+        }
+
+        playActorAnim(actor, animName, flipX);
+        syncActorVisual(actor);
+    }
+
+    function createActorVisual(actor, spriteName, defaultAnim) {
+        actor.visual = add([
+            sprite(spriteName, { anim: defaultAnim }),
+            pos(actor.pos.add(actor.visualOffset)),
+            anchor("center"),
+            z(actorDepth(actor.pos.y)),
+        ]);
+        actor.visual.animName = defaultAnim;
+        actor.visual.hidden = actor.isHidden;
+        syncActorVisual(actor);
+    }
+
+    createActorVisual(player, "playerAnim", "idle-down");
 
     function updateHearts() {
         hearts.forEach((heart, index) => {
@@ -636,17 +760,24 @@ scene("game", () => {
 
     function defeatZombie(zombie) {
         if (!zombie.exists()) return;
+        if (zombie.visual && zombie.visual.exists()) {
+            destroy(zombie.visual);
+        }
         destroy(zombie);
         enemiesDefeated += 1;
     }
 
-    function spawnExplosion(gx, gy) {
+    function spawnExplosion(gx, gy, spriteState = { anim: "center", flipX: false, flipY: false }) {
         const exp = add([
-            sprite("explosion"),
+            sprite("explosionAnim", {
+                anim: spriteState.anim,
+                flipX: spriteState.flipX,
+                flipY: spriteState.flipY,
+            }),
             pos(worldPos(gx, gy)),
             area({ shape: new Rect(vec2(-7, -7), 14, 14) }),
             anchor("center"),
-            z(30),
+            z(40),
             "explosion",
         ]);
 
@@ -679,6 +810,22 @@ scene("game", () => {
         ]);
     }
 
+    function getExplosionSpriteState(dir, isEnd) {
+        if (dir.x !== 0) {
+            return {
+                anim: isEnd ? "horizontal-end-right" : "horizontal-mid",
+                flipX: dir.x < 0,
+                flipY: false,
+            };
+        }
+
+        return {
+            anim: isEnd ? "vertical-end-down" : "vertical-mid",
+            flipX: false,
+            flipY: dir.y < 0,
+        };
+    }
+
     function explodeBomb(bomb) {
         if (!bomb.exists()) return;
 
@@ -706,7 +853,16 @@ scene("game", () => {
                 if (!inBounds(nx, ny)) break;
                 if (gameMap[ny][nx] === SOLID) break;
 
-                spawnExplosion(nx, ny);
+                const otherBomb = tileHasBomb(nx, ny);
+                const nextX = nx + dir.x;
+                const nextY = ny + dir.y;
+                const isEnd = step === range
+                    || gameMap[ny][nx] === DESTRUCTIBLE
+                    || Boolean(otherBomb)
+                    || !inBounds(nextX, nextY)
+                    || gameMap[nextY][nextX] === SOLID;
+
+                spawnExplosion(nx, ny, getExplosionSpriteState(dir, isEnd));
 
                 if (gameMap[ny][nx] === DESTRUCTIBLE) {
                     gameMap[ny][nx] = EMPTY;
@@ -719,7 +875,6 @@ scene("game", () => {
                     break;
                 }
 
-                const otherBomb = tileHasBomb(nx, ny);
                 if (otherBomb) {
                     wait(0.05, () => explodeBomb(otherBomb));
                     break;
@@ -738,16 +893,22 @@ scene("game", () => {
         if (!inBounds(x, y) || tileHasBomb(x, y)) return;
 
         const bomb = add([
-            sprite("bomb"),
+            sprite("bombAnim", { anim: "fuse" }),
             pos(worldPos(x, y)),
             area({ shape: new Rect(vec2(-6, -6), 12, 12) }),
             anchor("center"),
             z(18),
             "bomb",
-            { gridX: x, gridY: y, range: firePower },
+            { gridX: x, gridY: y, range: firePower, phase: "fuse" },
         ]);
 
         player.passThroughBomb = bomb;
+
+        wait(2.35, () => {
+            if (!bomb.exists()) return;
+            bomb.play("alert");
+            bomb.phase = "alert";
+        });
 
         wait(3, () => explodeBomb(bomb));
     }
@@ -755,6 +916,8 @@ scene("game", () => {
     function respawnPlayer() {
         player.pos = worldPos(1, 1);
         player.passThroughBomb = null;
+        player.facing = "down";
+        updateActorVisual(player, false);
     }
 
     onUpdate(() => {
@@ -779,7 +942,14 @@ scene("game", () => {
         else if (isKeyDown("up") || isKeyDown("w")) dirY = -1;
         else if (isKeyDown("down") || isKeyDown("s")) dirY = 1;
 
+        let isMoving = false;
+
         if (dirX !== 0 || dirY !== 0) {
+            if (dirX < 0) player.facing = "left";
+            else if (dirX > 0) player.facing = "right";
+            else if (dirY < 0) player.facing = "up";
+            else if (dirY > 0) player.facing = "down";
+
             const currentGrid = gridFromPos(player.pos);
             const nextGridX = currentGrid.x + dirX;
             const nextGridY = currentGrid.y + dirY;
@@ -788,8 +958,11 @@ scene("game", () => {
 
             if (!bombOnNext || canCrossBomb) {
                 player.move(dirX * player.speed, dirY * player.speed);
+                isMoving = true;
             }
         }
+
+        updateActorVisual(player, isMoving);
     });
 
     const spawnCandidates = [
@@ -814,19 +987,27 @@ scene("game", () => {
     });
 
     zombieSpawns.forEach((spawn) => {
-        add([
+        const zombie = add([
             sprite("zombie"),
+            opacity(0),
             pos(worldPos(spawn.x, spawn.y)),
             area({ shape: new Rect(vec2(3, 2), 10, 13) }),
             anchor("center"),
-            z(20),
+            z(actorDepth(worldPos(spawn.x, spawn.y).y)),
             "zombie",
             {
                 speed: 42,
                 direction: choose(["left", "right", "up", "down"]),
                 moveTimer: rand(0.4, 1.4),
+                facing: "down",
+                visualOffset: ACTOR_VISUAL_OFFSET,
+                isHidden: false,
             },
         ]);
+
+        zombie.facing = zombie.direction;
+        createActorVisual(zombie, "zombieAnim", "idle-down");
+        updateActorVisual(zombie, false);
     });
     totalEnemies = zombieSpawns.length;
 
@@ -860,6 +1041,7 @@ scene("game", () => {
         if (zombie.direction === "right") dir = { x: 1, y: 0 };
         if (zombie.direction === "up") dir = { x: 0, y: -1 };
         if (zombie.direction === "down") dir = { x: 0, y: 1 };
+        zombie.facing = zombie.direction;
 
         const laneGrid = gridFromPos(zombie.pos);
         const laneCenter = worldPos(laneGrid.x, laneGrid.y);
@@ -882,10 +1064,13 @@ scene("game", () => {
 
         if ((nextGrid.x !== currentGrid.x || nextGrid.y !== currentGrid.y) && tileBlockedForEnemy(nextGrid.x, nextGrid.y)) {
             chooseOpenDirection(zombie);
+            zombie.facing = zombie.direction;
+            updateActorVisual(zombie, false);
             return;
         }
 
         zombie.pos = nextPos;
+        updateActorVisual(zombie, true);
     });
 
     player.onCollide("powerup", (powerup) => {
@@ -929,20 +1114,20 @@ scene("game", () => {
         }
 
         isInvincible = true;
-        player.hidden = true;
+        setActorHidden(player, true);
         showToast("Vida perdida", [219, 76, 98]);
 
         wait(0.7, () => {
             respawnPlayer();
-            player.hidden = false;
+            setActorHidden(player, false);
 
             let flashes = 0;
             const blink = setInterval(() => {
-                player.hidden = !player.hidden;
+                setActorHidden(player, !player.isHidden);
                 flashes += 1;
                 if (flashes >= 10) {
                     clearInterval(blink);
-                    player.hidden = false;
+                    setActorHidden(player, false);
                     isInvincible = false;
                 }
             }, 100);
