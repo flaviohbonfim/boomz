@@ -17,7 +17,7 @@ import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
 
 const k = kaboom({
     width: 448,
-    height: 464,
+    height: 496,
     background: [25, 10, 25],
     scale: 1.5,
     crisp: true,
@@ -26,6 +26,8 @@ const k = kaboom({
 const TILE_SIZE = 16;
 const MAP_WIDTH = 28;
 const MAP_HEIGHT = 29;
+const HUD_HEIGHT = 32;
+const MAP_OFFSET_Y = HUD_HEIGHT;
 
 function makeSpriteData(charMap, props) {
     const canvas = document.createElement("canvas");
@@ -189,6 +191,34 @@ loadSprite("zombie", makeSpriteData(zombieData, {
     "g": [40, 80, 40],
 }));
 
+const heartData = [
+    "..RRRR..",
+    ".RRRRRR.",
+    "RRRRRRRR",
+    "RRRRRRRR",
+    ".RRRRRR.",
+    "..RRRR..",
+    "...RR...",
+    "....R...",
+];
+loadSprite("heart", makeSpriteData(heartData, {
+    "R": [220, 30, 60],
+}));
+
+const heartEmptyData = [
+    "..DDDD..",
+    ".DDDDDD.",
+    "DDDDDDDD",
+    "DDDDDDDD",
+    ".DDDDDD.",
+    "..DDDD..",
+    "...DD...",
+    "....D...",
+];
+loadSprite("heartEmpty", makeSpriteData(heartEmptyData, {
+    "D": [80, 40, 60],
+}));
+
 const SOLID = 1;
 const DESTRUCTIBLE = 2;
 const EMPTY = 0;
@@ -227,10 +257,52 @@ function generateMap() {
 scene("game", () => {
     generateMap();
     
+    let lives = 3;
+    let isPaused = false;
+    
+    add([
+        rect(width(), HUD_HEIGHT),
+        pos(0, 0),
+        color(20, 5, 20),
+        fixed(),
+        z(100),
+    ]);
+    
+    add([
+        text("CASTLEVANIA BOMBER", { size: 14 }),
+        pos(width() / 2, HUD_HEIGHT / 2),
+        anchor("center"),
+        color(150, 100, 150),
+        fixed(),
+        z(101),
+    ]);
+    
+    const hearts = [];
+    for (let i = 0; i < 3; i++) {
+        const h = add([
+            sprite("heart"),
+            pos(20 + i * 22, HUD_HEIGHT / 2),
+            anchor("center"),
+            scale(1.5),
+            fixed(),
+            z(101),
+        ]);
+        hearts.push(h);
+    }
+    
+    add([
+        text("ESC: PAUSE", { size: 10 }),
+        pos(width() - 10, HUD_HEIGHT / 2),
+        anchor("right"),
+        color(120, 80, 120),
+        fixed(),
+        z(101),
+    ]);
+    
     for (let y = 0; y < MAP_HEIGHT; y++) {
         for (let x = 0; x < MAP_WIDTH; x++) {
             const px = x * TILE_SIZE + TILE_SIZE / 2;
-            const py = y * TILE_SIZE + TILE_SIZE / 2;
+            const py = y * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y;
             
             if (gameMap[y][x] === SOLID) {
                 add([
@@ -258,7 +330,7 @@ scene("game", () => {
     
     const player = add([
         sprite("player"),
-        pos(TILE_SIZE + TILE_SIZE / 2, TILE_SIZE + TILE_SIZE / 2),
+        pos(TILE_SIZE + TILE_SIZE / 2, TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y),
         area({ shape: new Rect(vec2(3, 3), 10, 10) }),
         body(),
         anchor("center"),
@@ -266,7 +338,23 @@ scene("game", () => {
         { speed: 120 },
     ]);
     
+    function updateHearts() {
+        hearts.forEach((h, i) => {
+            if (i < lives) {
+                h.use(sprite("heart"));
+            } else {
+                h.use(sprite("heartEmpty"));
+            }
+        });
+    }
+    
+    function respawnPlayer() {
+        player.pos = vec2(TILE_SIZE + TILE_SIZE / 2, TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y);
+    }
+    
     onUpdate(() => {
+        if (isPaused) return;
+        
         let dirX = 0;
         let dirY = 0;
         
@@ -281,15 +369,23 @@ scene("game", () => {
     });
     
     function placeBomb() {
+        if (isPaused) return;
+        
         const bombs = get("bomb");
         if (bombs.length >= 1) return;
         
-        const gx = Math.floor(player.pos.x / TILE_SIZE);
-        const gy = Math.floor(player.pos.y / TILE_SIZE);
+        const relX = player.pos.x - TILE_SIZE / 2;
+        const relY = player.pos.y - MAP_OFFSET_Y - TILE_SIZE / 2;
+        
+        const gx = Math.round(relX / TILE_SIZE);
+        const gy = Math.round(relY / TILE_SIZE);
+        
+        const bombX = gx * TILE_SIZE + TILE_SIZE / 2;
+        const bombY = gy * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y;
         
         const bomb = add([
             sprite("bomb"),
-            pos(gx * TILE_SIZE + TILE_SIZE / 2, gy * TILE_SIZE + TILE_SIZE / 2),
+            pos(bombX, bombY),
             area(),
             anchor("center"),
             "bomb",
@@ -307,9 +403,9 @@ scene("game", () => {
     onKeyPress("z", placeBomb);
     
     function spawnExplosion(gx, gy) {
-        add([
+        const exp = add([
             sprite("explosion"),
-            pos(gx * TILE_SIZE + TILE_SIZE / 2, gy * TILE_SIZE + TILE_SIZE / 2),
+            pos(gx * TILE_SIZE + TILE_SIZE / 2, gy * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y),
             area(),
             anchor("center"),
             "explosion",
@@ -317,7 +413,7 @@ scene("game", () => {
         ]);
         
         wait(0.5, () => {
-            get("explosion").forEach(e => destroy(e));
+            if (exp.exists()) destroy(exp);
         });
     }
     
@@ -376,7 +472,7 @@ scene("game", () => {
     zombieConfigs.forEach(cfg => {
         const zombie = add([
             sprite("zombie"),
-            pos(cfg.x * TILE_SIZE + TILE_SIZE / 2, cfg.y * TILE_SIZE + TILE_SIZE / 2),
+            pos(cfg.x * TILE_SIZE + TILE_SIZE / 2, cfg.y * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y),
             area({ shape: new Rect(vec2(3, 3), 10, 10) }),
             body(),
             anchor("center"),
@@ -390,6 +486,8 @@ scene("game", () => {
     });
     
     onUpdate("zombie", (zombie) => {
+        if (isPaused) return;
+        
         zombie.moveTimer -= dt();
         
         if (zombie.moveTimer <= 0) {
@@ -407,8 +505,8 @@ scene("game", () => {
         
         zombie.move(dirX * zombie.speed, dirY * zombie.speed);
         
-        const gx = Math.floor(zombie.pos.x / TILE_SIZE);
-        const gy = Math.floor(zombie.pos.y / TILE_SIZE);
+        const gx = Math.floor((zombie.pos.x - TILE_SIZE / 2) / TILE_SIZE);
+        const gy = Math.floor((zombie.pos.y - MAP_OFFSET_Y - TILE_SIZE / 2) / TILE_SIZE);
         
         if (gx < 1 || gx >= MAP_WIDTH - 1 || gy < 1 || gy >= MAP_HEIGHT - 1) {
             zombie.pos = oldPos;
@@ -417,12 +515,56 @@ scene("game", () => {
     });
     
     player.onCollide("zombie", () => {
-        gameOver();
+        playerHit();
     });
     
     player.onCollide("explosion", () => {
-        gameOver();
+        playerHit();
     });
+    
+    let isInvincible = false;
+    
+    function playerHit() {
+        if (isPaused || isInvincible) return;
+        
+        lives--;
+        updateHearts();
+        
+        if (lives <= 0) {
+            gameOver();
+        } else {
+            isInvincible = true;
+            
+            add([
+                text("OUCH!", { size: 24 }),
+                pos(width() / 2, height() / 2),
+                anchor("center"),
+                color(255, 50, 50),
+                fixed(),
+                z(200),
+                "hitText",
+            ]);
+            
+            player.hidden = true;
+            
+            wait(1, () => {
+                get("hitText").forEach(e => destroy(e));
+                respawnPlayer();
+                player.hidden = false;
+                
+                let blinkCount = 0;
+                const blinkInterval = setInterval(() => {
+                    player.hidden = !player.hidden;
+                    blinkCount++;
+                    if (blinkCount >= 10) {
+                        clearInterval(blinkInterval);
+                        player.hidden = false;
+                        isInvincible = false;
+                    }
+                }, 100);
+            });
+        }
+    }
     
     function gameOver() {
         add([
@@ -430,7 +572,8 @@ scene("game", () => {
             pos(width() / 2, height() / 2),
             anchor("center"),
             color(200, 50, 50),
-            "ui",
+            fixed(),
+            z(200),
         ]);
         
         wait(2, () => {
@@ -446,7 +589,8 @@ scene("game", () => {
                 pos(width() / 2, height() / 2),
                 anchor("center"),
                 color(255, 215, 0),
-                "ui",
+                fixed(),
+                z(200),
             ]);
             wait(2, () => go("game"));
         }
@@ -454,6 +598,63 @@ scene("game", () => {
     
     onCollide("explosion", "zombie", () => {
         checkWin();
+    });
+    
+    function togglePause() {
+        isPaused = !isPaused;
+        
+        get("pauseUI").forEach(e => destroy(e));
+        
+        if (isPaused) {
+            add([
+                rect(width(), height()),
+                pos(0, 0),
+                color(0, 0, 0),
+                opacity(0.7),
+                fixed(),
+                z(150),
+                "pauseUI",
+            ]);
+            
+            add([
+                text("PAUSED", { size: 48 }),
+                pos(width() / 2, height() / 2 - 30),
+                anchor("center"),
+                color(200, 150, 200),
+                fixed(),
+                z(151),
+                "pauseUI",
+            ]);
+            
+            add([
+                text("Press ESC to resume", { size: 16 }),
+                pos(width() / 2, height() / 2 + 20),
+                anchor("center"),
+                color(150, 100, 150),
+                fixed(),
+                z(151),
+                "pauseUI",
+            ]);
+            
+            add([
+                text("Press R to restart", { size: 16 }),
+                pos(width() / 2, height() / 2 + 50),
+                anchor("center"),
+                color(150, 100, 150),
+                fixed(),
+                z(151),
+                "pauseUI",
+            ]);
+        }
+    }
+    
+    onKeyPress("escape", togglePause);
+    onKeyPress("p", togglePause);
+    
+    onKeyPress("r", () => {
+        if (isPaused) {
+            go("game");
+        }
     });
 });
 
