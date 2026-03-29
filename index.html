@@ -212,10 +212,13 @@ function generateAssets() {
         ctx.fillRect(14, h - 22, w - 28, 2);
     });
 
-    makeSprite("pausePanel", 212, 120, (ctx, w, h) => {
+    makeSprite("pausePanel", 228, 176, (ctx, w, h) => {
         panel(ctx, 0, 0, w, h, "#130c12", "#7a4768", "#d6b064");
         ctx.fillStyle = "rgba(255,255,255,0.04)";
         ctx.fillRect(12, 18, w - 24, h - 36);
+        ctx.fillStyle = "#4b2940";
+        ctx.fillRect(20, 46, w - 40, 1);
+        ctx.fillRect(20, h - 24, w - 40, 1);
     });
 
     makeSprite("selectorBat", 18, 10, (ctx) => {
@@ -642,6 +645,16 @@ scene("game", () => {
     let firePower = START_FIRE;
     let isPaused = false;
     let isInvincible = false;
+    let runEnded = false;
+    let pauseSelection = 0;
+    let pauseButtons = [];
+    let pauseLabels = [];
+
+    const pauseOptions = [
+        { label: "Voltar ao jogo", action: () => closePause() },
+        { label: "Reiniciar fase", action: () => go("game") },
+        { label: "Menu inicial", action: () => go("menu") },
+    ];
 
     add([sprite("gameBackdrop"), pos(0, 0)]);
     add([sprite("hudPanel"), pos(0, 0), fixed(), z(100)]);
@@ -813,6 +826,15 @@ scene("game", () => {
             "explosion",
         ]);
 
+        get("zombie").forEach((zombie) => {
+            const zombieGrid = gridFromPos(zombie.pos);
+            if (zombieGrid.x === gx && zombieGrid.y === gy && zombie.exists()) {
+                destroy(zombie);
+            }
+        });
+
+        checkWin();
+
         wait(0.45, () => {
             if (exp.exists()) destroy(exp);
         });
@@ -825,7 +847,7 @@ scene("game", () => {
         add([
             sprite(kind === POWER_BOMB ? "bombPower" : "firePower"),
             pos(worldPos(gx, gy)),
-            area({ shape: new Rect(vec2(-6, -6), 12, 12) }),
+            area({ shape: new Rect(vec2(-3, -3), 6, 6) }),
             anchor("center"),
             z(12),
             "powerup",
@@ -1014,6 +1036,21 @@ scene("game", () => {
         if (zombie.direction === "up") dir = { x: 0, y: -1 };
         if (zombie.direction === "down") dir = { x: 0, y: 1 };
 
+        const laneGrid = gridFromPos(zombie.pos);
+        const laneCenter = worldPos(laneGrid.x, laneGrid.y);
+        if (dir.x !== 0) {
+            zombie.pos.y += (laneCenter.y - zombie.pos.y) * 0.35;
+            if (Math.abs(zombie.pos.y - laneCenter.y) < 0.2) {
+                zombie.pos.y = laneCenter.y;
+            }
+        }
+        if (dir.y !== 0) {
+            zombie.pos.x += (laneCenter.x - zombie.pos.x) * 0.35;
+            if (Math.abs(zombie.pos.x - laneCenter.x) < 0.2) {
+                zombie.pos.x = laneCenter.x;
+            }
+        }
+
         const nextPos = zombie.pos.add(vec2(dir.x * zombie.speed * dt(), dir.y * zombie.speed * dt()));
         const currentGrid = gridFromPos(zombie.pos);
         const nextGrid = gridFromPos(nextPos);
@@ -1040,6 +1077,8 @@ scene("game", () => {
     });
 
     function endRun(message, tint, restartDelay) {
+        if (runEnded) return;
+        runEnded = true;
         clearTag("pauseUI");
         add([
             sprite("pausePanel"),
@@ -1071,7 +1110,7 @@ scene("game", () => {
     }
 
     function playerHit() {
-        if (isPaused || isInvincible) return;
+        if (isPaused || isInvincible || runEnded) return;
 
         lives -= 1;
         updateHearts();
@@ -1103,6 +1142,7 @@ scene("game", () => {
     }
 
     function checkWin() {
+        if (runEnded) return;
         if (get("zombie").length === 0) {
             endRun("VOCE VENCEU", [236, 208, 122], 2);
         }
@@ -1116,13 +1156,33 @@ scene("game", () => {
         checkWin();
     });
 
-    function togglePause() {
-        if (get("resultUI").length > 0) return;
-
-        isPaused = !isPaused;
+    function clearPauseUI() {
         clearTag("pauseUI");
+        pauseButtons = [];
+        pauseLabels = [];
+    }
 
-        if (!isPaused) return;
+    function refreshPauseMenu() {
+        pauseButtons.forEach((button, index) => {
+            button.use(sprite(index === pauseSelection ? "menuButtonActive" : "menuButton"));
+            pauseLabels[index].color = index === pauseSelection
+                ? rgb(255, 225, 150)
+                : rgb(196, 173, 186);
+        });
+    }
+
+    function closePause() {
+        isPaused = false;
+        clearPauseUI();
+    }
+
+    function runPauseSelection() {
+        pauseOptions[pauseSelection].action();
+    }
+
+    function openPause() {
+        isPaused = true;
+        clearPauseUI();
 
         add([
             rect(width(), height()),
@@ -1142,8 +1202,8 @@ scene("game", () => {
             "pauseUI",
         ]);
         add([
-            text("PAUSADO", { size: 30 }),
-            pos(width() / 2, height() / 2 - 22),
+            text("PAUSADO", { size: 24 }),
+            pos(width() / 2, height() / 2 - 56),
             anchor("center"),
             color(236, 208, 122),
             fixed(),
@@ -1151,32 +1211,86 @@ scene("game", () => {
             "pauseUI",
         ]);
         add([
-            text("ESC para voltar", { size: 12 }),
-            pos(width() / 2, height() / 2 + 12),
+            text("Escolha uma opcao", { size: 10 }),
+            pos(width() / 2, height() / 2 - 38),
             anchor("center"),
             color(196, 173, 186),
             fixed(),
             z(132),
             "pauseUI",
         ]);
+
+        pauseSelection = 0;
+        pauseOptions.forEach((option, index) => {
+            const y = height() / 2 - 18 + index * 32;
+            const button = add([
+                sprite(index === 0 ? "menuButtonActive" : "menuButton"),
+                pos(width() / 2, y),
+                anchor("center"),
+                fixed(),
+                z(132),
+                "pauseUI",
+            ]);
+            const label = add([
+                text(option.label, { size: 12 }),
+                pos(width() / 2, y + 1),
+                anchor("center"),
+                color(index === 0 ? 255 : 196, index === 0 ? 225 : 173, index === 0 ? 150 : 186),
+                fixed(),
+                z(133),
+                "pauseUI",
+            ]);
+            pauseButtons.push(button);
+            pauseLabels.push(label);
+        });
+
         add([
-            text("R para reiniciar", { size: 12 }),
-            pos(width() / 2, height() / 2 + 32),
+            text("SETAS + ENTER", { size: 10 }),
+            pos(width() / 2, height() / 2 + 68),
             anchor("center"),
-            color(196, 173, 186),
+            color(153, 129, 145),
             fixed(),
             z(132),
             "pauseUI",
         ]);
+
+        refreshPauseMenu();
+    }
+
+    function togglePause() {
+        if (get("resultUI").length > 0) return;
+
+        if (isPaused) {
+            closePause();
+        } else {
+            openPause();
+        }
     }
 
     onKeyPress("space", placeBomb);
     onKeyPress("z", placeBomb);
     onKeyPress("x", placeBomb);
+    onKeyPress("up", () => {
+        if (!isPaused) return;
+        pauseSelection = (pauseSelection - 1 + pauseOptions.length) % pauseOptions.length;
+        refreshPauseMenu();
+    });
+    onKeyPress("down", () => {
+        if (!isPaused) return;
+        pauseSelection = (pauseSelection + 1) % pauseOptions.length;
+        refreshPauseMenu();
+    });
+    onKeyPress("enter", () => {
+        if (!isPaused) return;
+        runPauseSelection();
+    });
     onKeyPress("escape", togglePause);
     onKeyPress("p", togglePause);
     onKeyPress("r", () => {
         if (isPaused) go("game");
+    });
+    onKeyPress("m", () => {
+        if (isPaused) go("menu");
     });
 
     updateHearts();
