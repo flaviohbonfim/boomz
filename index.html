@@ -490,6 +490,7 @@ scene("game", () => {
     
     onKeyPress("space", placeBomb);
     onKeyPress("z", placeBomb);
+    onKeyPress("x", placeBomb);
     
     function spawnExplosion(gx, gy) {
         const exp = add([
@@ -807,7 +808,138 @@ scene("game", () => {
     });
 });
 
-go("game");
+scene("menu", () => {
+    add([
+        rect(width(), height()),
+        pos(0, 0),
+        color(15, 5, 15),
+    ]);
+    
+    add([
+        text("CASTLEVANIA", { size: 36 }),
+        pos(width() / 2, 50),
+        anchor("center"),
+        color(150, 50, 150),
+    ]);
+    
+    add([
+        text("BOMBERMAN", { size: 28 }),
+        pos(width() / 2, 85),
+        anchor("center"),
+        color(100, 30, 100),
+    ]);
+    
+    const menuOptions = [
+        { text: "START GAME", scene: "game" },
+        { text: "CONTROLS", scene: "controls" },
+    ];
+    
+    let selectedIndex = 0;
+    
+    const menuItems = [];
+    
+    menuOptions.forEach((opt, i) => {
+        const item = add([
+            text(opt.text, { size: 20 }),
+            pos(width() / 2, 180 + i * 40),
+            anchor("center"),
+            color(150, 100, 150),
+            "menuItem",
+            { index: i },
+        ]);
+        menuItems.push(item);
+    });
+    
+    function updateMenuSelection() {
+        menuItems.forEach((item, i) => {
+            if (i === selectedIndex) {
+                item.color = rgb(255, 215, 0);
+                item.text = "> " + menuOptions[i].text + " <";
+            } else {
+                item.color = rgb(150, 100, 150);
+                item.text = menuOptions[i].text;
+            }
+        });
+    }
+    
+    updateMenuSelection();
+    
+    onKeyPress("up", () => {
+        selectedIndex = (selectedIndex - 1 + menuOptions.length) % menuOptions.length;
+        updateMenuSelection();
+    });
+    
+    onKeyPress("down", () => {
+        selectedIndex = (selectedIndex + 1) % menuOptions.length;
+        updateMenuSelection();
+    });
+    
+    onKeyPress("enter", () => {
+        go(menuOptions[selectedIndex].scene);
+    });
+    
+    onKeyPress("space", () => {
+        go(menuOptions[selectedIndex].scene);
+    });
+});
+
+scene("controls", () => {
+    add([
+        rect(width(), height()),
+        pos(0, 0),
+        color(15, 5, 15),
+    ]);
+    
+    add([
+        text("CONTROLS", { size: 28 }),
+        pos(width() / 2, 30),
+        anchor("center"),
+        color(150, 50, 150),
+    ]);
+    
+    const controls = [
+        { key: "ARROWS / WASD", action: "Move" },
+        { key: "SPACE / Z / X", action: "Place Bomb" },
+        { key: "ESC / P", action: "Pause" },
+    ];
+    
+    controls.forEach((ctrl, i) => {
+        add([
+            text(ctrl.key, { size: 14 }),
+            pos(width() / 2 - 80, 90 + i * 40),
+            anchor("left"),
+            color(200, 180, 100),
+        ]);
+        
+        add([
+            text(ctrl.action, { size: 14 }),
+            pos(width() / 2 + 80, 90 + i * 40),
+            anchor("right"),
+            color(150, 150, 150),
+        ]);
+    });
+    
+    add([
+        text("PRESS ENTER TO GO BACK", { size: 12 }),
+        pos(width() / 2, height() - 30),
+        anchor("center"),
+        color(100, 80, 100),
+    ]);
+    
+    onKeyPress("enter", () => {
+        go("menu");
+    });
+    
+    onKeyPress("escape", () => {
+        go("menu");
+    });
+    
+    onKeyPress("space", () => {
+        go("menu");
+    });
+});
+
+go("menu");
     </script>
 </body>
 </html>
