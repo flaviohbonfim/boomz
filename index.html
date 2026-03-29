@@ -16,16 +16,16 @@
 import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
 
 const k = kaboom({
-    width: 448,
-    height: 496,
+    width: 320,
+    height: 280,
     background: [25, 10, 25],
-    scale: 1.5,
+    scale: 2.5,
     crisp: true,
 });
 
 const TILE_SIZE = 16;
-const MAP_WIDTH = 28;
-const MAP_HEIGHT = 29;
+const MAP_WIDTH = 20;
+const MAP_HEIGHT = 15;
 const HUD_HEIGHT = 40;
 const MAP_OFFSET_Y = HUD_HEIGHT;
 
@@ -276,7 +276,7 @@ function generateMap() {
         for (let x = 1; x < MAP_WIDTH - 1; x++) {
             if (gameMap[y][x] === EMPTY) {
                 const isSafe = safeZone.some(([sx, sy]) => x === sx && y === sy);
-                if (!isSafe && Math.random() < 0.4) {
+                if (!isSafe && Math.random() < 0.2) {
                     gameMap[y][x] = DESTRUCTIBLE;
                 }
             }
@@ -439,7 +439,18 @@ scene("game", () => {
         else if (isKeyDown("down") || isKeyDown("s")) dirY = 1;
         
         if (dirX !== 0 || dirY !== 0) {
-            player.move(dirX * player.speed, dirY * player.speed);
+            const playerGridX = Math.round((player.pos.x - TILE_SIZE / 2) / TILE_SIZE);
+            const playerGridY = Math.round((player.pos.y - MAP_OFFSET_Y - TILE_SIZE / 2) / TILE_SIZE);
+            
+            const nextGridX = playerGridX + dirX;
+            const nextGridY = playerGridY + dirY;
+            
+            const bombs = get("bombObstacle");
+            const bombOnNext = bombs.find(b => b.gridX === nextGridX && b.gridY === nextGridY);
+            
+            if (!bombOnNext) {
+                player.move(dirX * player.speed, dirY * player.speed);
+            }
         }
     });
     
@@ -464,9 +475,8 @@ scene("game", () => {
         const bomb = add([
             sprite("bomb"),
             pos(bombX, bombY),
-            area({ shape: new Rect(vec2(-2, -2), 4, 4) }),
+            area(),
             anchor("center"),
-            body({ isStatic: true }),
             "bombObstacle",
             { gridX: gx, gridY: gy, range: firePower },
         ]);
