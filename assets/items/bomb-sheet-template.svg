@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="16" viewBox="0 0 96 16" shape-rendering="crispEdges">
+  <title>Bombervania bomb sheet template</title>
+  <desc>Guide template for bomb-sheet.png. Remove guide layers before final PNG export.</desc>
+  <defs>
+    <style>
+      .bg { fill: #0d1015; }
+      .slot { fill: #1b2530; fill-opacity: 0.42; stroke: #5a6473; stroke-opacity: 0.55; }
+      .safe { fill: none; stroke: #c7cfda; stroke-opacity: 0.35; }
+      .pivot { stroke: #f2d16b; stroke-width: 1; }
+      .label { fill: #f2ead6; font-family: monospace; font-size: 3px; }
+    </style>
+    <g id="slot">
+      <rect class="slot" x="0" y="0" width="16" height="16" />
+      <rect class="safe" x="2" y="2" width="12" height="12" />
+      <path class="pivot" d="M8 7h1v3H8zM7 8h3v1H7z" />
+    </g>
+  </defs>
+
+  <g id="guide-bg">
+    <rect class="bg" x="0" y="0" width="96" height="16" />
+  </g>
+
+  <g id="guide-slots">
+    <use href="#slot" x="0" y="0" />
+    <use href="#slot" x="16" y="0" />
+    <use href="#slot" x="32" y="0" />
+    <use href="#slot" x="48" y="0" />
+    <use href="#slot" x="64" y="0" />
+    <use href="#slot" x="80" y="0" />
+  </g>
+
+  <g id="artwork"></g>
+
+  <g id="guide-labels">
+    <text class="label" x="1" y="4">f1</text>
+    <text class="label" x="17" y="4">f2</text>
+    <text class="label" x="33" y="4">f3</text>
+    <text class="label" x="49" y="4">f4</text>
+    <text class="label" x="65" y="4">a1</text>
+    <text class="label" x="81" y="4">a2</text>
+  </g>
+</svg>

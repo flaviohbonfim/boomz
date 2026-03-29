@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="80" viewBox="0 0 48 80" shape-rendering="crispEdges">
+  <title>Bombervania explosion sheet template</title>
+  <desc>Guide template for explosion-sheet.png. Remove guide layers before final PNG export.</desc>
+  <defs>
+    <style>
+      .bg { fill: #0d1015; }
+      .slot { fill: #203029; fill-opacity: 0.42; stroke: #5a6473; stroke-opacity: 0.55; }
+      .safe { fill: none; stroke: #c7cfda; stroke-opacity: 0.35; }
+      .pivot { stroke: #f2d16b; stroke-width: 1; }
+      .label { fill: #f2ead6; font-family: monospace; font-size: 3px; }
+    </style>
+    <g id="slot">
+      <rect class="slot" x="0" y="0" width="16" height="16" />
+      <rect class="safe" x="0" y="0" width="16" height="16" />
+      <path class="pivot" d="M8 7h1v3H8zM7 8h3v1H7z" />
+    </g>
+  </defs>
+
+  <g id="guide-bg">
+    <rect class="bg" x="0" y="0" width="48" height="80" />
+  </g>
+
+  <g id="guide-slots">
+    <g transform="translate(0 0)">
+      <use href="#slot" x="0" y="0" />
+      <use href="#slot" x="16" y="0" />
+      <use href="#slot" x="32" y="0" />
+    </g>
+    <g transform="translate(0 16)">
+      <use href="#slot" x="0" y="0" />
+      <use href="#slot" x="16" y="0" />
+      <use href="#slot" x="32" y="0" />
+    </g>
+    <g transform="translate(0 32)">
+      <use href="#slot" x="0" y="0" />
+      <use href="#slot" x="16" y="0" />
+      <use href="#slot" x="32" y="0" />
+    </g>
+    <g transform="translate(0 48)">
+      <use href="#slot" x="0" y="0" />
+      <use href="#slot" x="16" y="0" />
+      <use href="#slot" x="32" y="0" />
+    </g>
+    <g transform="translate(0 64)">
+      <use href="#slot" x="0" y="0" />
+      <use href="#slot" x="16" y="0" />
+      <use href="#slot" x="32" y="0" />
+    </g>
+  </g>
+
+  <g id="artwork"></g>
+
+  <g id="guide-labels">
+    <text class="label" x="1" y="4">center</text>
+    <text class="label" x="1" y="20">h-mid</text>
+    <text class="label" x="1" y="36">v-mid</text>
+    <text class="label" x="1" y="52">h-end</text>
+    <text class="label" x="1" y="68">v-end</text>
+  </g>
+</svg>

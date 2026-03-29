@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="192" viewBox="0 0 144 192" shape-rendering="crispEdges">
+  <title>Bombervania player sheet template</title>
+  <desc>Guide template for player-sheet.png. Remove guide layers before final PNG export.</desc>
+  <defs>
+    <style>
+      .bg { fill: #0d1015; }
+      .active { fill: #173125; }
+      .empty { fill: #2a1a20; }
+      .frame { fill-opacity: 0.38; stroke: #5a6473; stroke-opacity: 0.55; }
+      .cell { fill: none; stroke: #c7cfda; stroke-opacity: 0.35; }
+      .pivot { stroke: #f2d16b; stroke-width: 1; }
+      .label { fill: #f2ead6; font-family: monospace; font-size: 3px; }
+    </style>
+    <g id="slot-active">
+      <rect class="frame active" x="0" y="0" width="24" height="24" />
+      <rect class="cell" x="4" y="4" width="16" height="16" />
+      <path class="pivot" d="M12 17h1v3h-1zM11 18h3v1h-3z" />
+    </g>
+    <g id="slot-empty">
+      <rect class="frame empty" x="0" y="0" width="24" height="24" />
+      <rect class="cell" x="4" y="4" width="16" height="16" />
+      <path class="pivot" d="M12 17h1v3h-1zM11 18h3v1h-3z" />
+    </g>
+  </defs>
+
+  <g id="guide-bg">
+    <rect class="bg" x="0" y="0" width="144" height="192" />
+  </g>
+
+  <g id="guide-slots">
+    <g transform="translate(0 0)">
+      <use href="#slot-active" x="0" y="0" />
+      <use href="#slot-active" x="24" y="0" />
+      <use href="#slot-empty" x="48" y="0" />
+      <use href="#slot-empty" x="72" y="0" />
+      <use href="#slot-empty" x="96" y="0" />
+      <use href="#slot-empty" x="120" y="0" />
+    </g>
+    <g transform="translate(0 24)">
+      <use href="#slot-active" x="0" y="0" />
+      <use href="#slot-active" x="24" y="0" />
+      <use href="#slot-active" x="48" y="0" />
+      <use href="#slot-active" x="72" y="0" />
+      <use href="#slot-empty" x="96" y="0" />
+      <use href="#slot-empty" x="120" y="0" />
+    </g>
+    <g transform="translate(0 48)">
+      <use href="#slot-active" x="0" y="0" />
+      <use href="#slot-active" x="24" y="0" />
+      <use href="#slot-empty" x="48" y="0" />
+      <use href="#slot-empty" x="72" y="0" />
+      <use href="#slot-empty" x="96" y="0" />
+      <use href="#slot-empty" x="120" y="0" />
+    </g>
+    <g transform="translate(0 72)">
+      <use href="#slot-active" x="0" y="0" />
+      <use href="#slot-active" x="24" y="0" />
+      <use href="#slot-active" x="48" y="0" />
+      <use href="#slot-active" x="72" y="0" />
+      <use href="#slot-empty" x="96" y="0" />
+      <use href="#slot-empty" x="120" y="0" />
+    </g>
+    <g transform="translate(0 96)">
+      <use href="#slot-active" x="0" y="0" />
+      <use href="#slot-active" x="24" y="0" />
+      <use href="#slot-empty" x="48" y="0" />
+      <use href="#slot-empty" x="72" y="0" />
+      <use href="#slot-empty" x="96" y="0" />
+      <use href="#slot-empty" x="120" y="0" />
+    </g>
+    <g transform="translate(0 120)">
+      <use href="#slot-active" x="0" y="0" />
+      <use href="#slot-active" x="24" y="0" />
+      <use href="#slot-active" x="48" y="0" />
+      <use href="#slot-active" x="72" y="0" />
+      <use href="#slot-empty" x="96" y="0" />
+      <use href="#slot-empty" x="120" y="0" />
+    </g>
+    <g transform="translate(0 144)">
+      <use href="#slot-active" x="0" y="0" />
+      <use href="#slot-active" x="24" y="0" />
+      <use href="#slot-active" x="48" y="0" />
+      <use href="#slot-active" x="72" y="0" />
+      <use href="#slot-empty" x="96" y="0" />
+      <use href="#slot-empty" x="120" y="0" />
+    </g>
+    <g transform="translate(0 168)">
+      <use href="#slot-active" x="0" y="0" />
+      <use href="#slot-active" x="24" y="0" />
+      <use href="#slot-active" x="48" y="0" />
+      <use href="#slot-active" x="72" y="0" />
+      <use href="#slot-active" x="96" y="0" />
+      <use href="#slot-active" x="120" y="0" />
+    </g>
+  </g>
+
+  <g id="artwork"></g>
+
+  <g id="guide-labels">
+    <text class="label" x="2" y="5">idle-down</text>
+    <text class="label" x="2" y="29">walk-down</text>
+    <text class="label" x="2" y="53">idle-side</text>
+    <text class="label" x="2" y="77">walk-side</text>
+    <text class="label" x="2" y="101">idle-up</text>
+    <text class="label" x="2" y="125">walk-up</text>
+    <text class="label" x="2" y="149">hurt</text>
+    <text class="label" x="2" y="173">death</text>
+  </g>
+</svg>
