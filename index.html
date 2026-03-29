@@ -26,7 +26,7 @@ const k = kaboom({
 const TILE_SIZE = 16;
 const MAP_WIDTH = 28;
 const MAP_HEIGHT = 29;
-const HUD_HEIGHT = 32;
+const HUD_HEIGHT = 40;
 const MAP_OFFSET_Y = HUD_HEIGHT;
 
 function makeSpriteData(charMap, props) {
@@ -219,9 +219,39 @@ loadSprite("heartEmpty", makeSpriteData(heartEmptyData, {
     "D": [80, 40, 60],
 }));
 
+const bombPowerData = [
+    "..BBBB..",
+    ".BBBBBB.",
+    "BBBBBBBB",
+    "BBBBBBBB",
+    "BBBBBBBB",
+    "BBBBBBBB",
+    ".BBBBBB.",
+    "..BBBB..",
+];
+loadSprite("bombPower", makeSpriteData(bombPowerData, {
+    "B": [255, 100, 50],
+}));
+
+const firePowerData = [
+    "....RR....",
+    "...RRRR...",
+    "..RRRRRR..",
+    ".RRRRRRRR.",
+    "RRRRRRRRRR",
+    "..RRRRRR..",
+    "...RRRR...",
+    "....RR....",
+];
+loadSprite("firePower", makeSpriteData(firePowerData, {
+    "R": [255, 150, 0],
+}));
+
 const SOLID = 1;
 const DESTRUCTIBLE = 2;
 const EMPTY = 0;
+const BOMB_POWERUP = 3;
+const FIRE_POWERUP = 4;
 
 let gameMap = [];
 
@@ -258,6 +288,8 @@ scene("game", () => {
     generateMap();
     
     let lives = 3;
+    let maxBombs = 1;
+    let firePower = 2;
     let isPaused = false;
     
     add([
@@ -269,8 +301,8 @@ scene("game", () => {
     ]);
     
     add([
-        text("CASTLEVANIA BOMBER", { size: 14 }),
-        pos(width() / 2, HUD_HEIGHT / 2),
+        text("CASTLEVANIA BOMBER", { size: 12 }),
+        pos(width() / 2, 8),
         anchor("center"),
         color(150, 100, 150),
         fixed(),
@@ -281,14 +313,52 @@ scene("game", () => {
     for (let i = 0; i < 3; i++) {
         const h = add([
             sprite("heart"),
-            pos(20 + i * 22, HUD_HEIGHT / 2),
+            pos(12 + i * 20, 28),
             anchor("center"),
-            scale(1.5),
+            scale(1.2),
             fixed(),
             z(101),
         ]);
         hearts.push(h);
     }
+    
+    const bombLabel = add([
+        text("BOMBS:", { size: 10 }),
+        pos(80, 22),
+        anchor("left"),
+        color(200, 180, 100),
+        fixed(),
+        z(101),
+    ]);
+    
+    const bombCount = add([
+        text("1", { size: 14 }),
+        pos(120, 28),
+        anchor("center"),
+        color(255, 200, 100),
+        fixed(),
+        z(101),
+        "bombCount",
+    ]);
+    
+    const fireLabel = add([
+        text("FIRE:", { size: 10 }),
+        pos(145, 22),
+        anchor("left"),
+        color(200, 100, 100),
+        fixed(),
+        z(101),
+    ]);
+    
+    const fireCount = add([
+        text("2", { size: 14 }),
+        pos(180, 28),
+        anchor("center"),
+        color(255, 150, 50),
+        fixed(),
+        z(101),
+        "fireCount",
+    ]);
     
     add([
         text("ESC: PAUSE", { size: 10 }),
@@ -348,6 +418,11 @@ scene("game", () => {
         });
     }
     
+    function updateStats() {
+        bombCount.text = maxBombs.toString();
+        fireCount.text = firePower.toString();
+    }
+    
     function respawnPlayer() {
         player.pos = vec2(TILE_SIZE + TILE_SIZE / 2, TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y);
     }
@@ -371,8 +446,8 @@ scene("game", () => {
     function placeBomb() {
         if (isPaused) return;
         
-        const bombs = get("bomb");
-        if (bombs.length >= 1) return;
+        const bombs = get("bombObstacle");
+        if (bombs.length >= maxBombs) return;
         
         const relX = player.pos.x - TILE_SIZE / 2;
         const relY = player.pos.y - MAP_OFFSET_Y - TILE_SIZE / 2;
@@ -380,16 +455,20 @@ scene("game", () => {
         const gx = Math.round(relX / TILE_SIZE);
         const gy = Math.round(relY / TILE_SIZE);
         
+        const existingBomb = bombs.find(b => b.gridX === gx && b.gridY === gy);
+        if (existingBomb) return;
+        
         const bombX = gx * TILE_SIZE + TILE_SIZE / 2;
         const bombY = gy * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y;
         
         const bomb = add([
             sprite("bomb"),
             pos(bombX, bombY),
-            area(),
+            area({ shape: new Rect(vec2(-2, -2), 4, 4) }),
             anchor("center"),
-            "bomb",
-            { gridX: gx, gridY: gy },
+            body({ isStatic: true }),
+            "bombObstacle",
+            { gridX: gx, gridY: gy, range: firePower },
         ]);
         
         wait(3, () => {
@@ -406,7 +485,7 @@ scene("game", () => {
         const exp = add([
             sprite("explosion"),
             pos(gx * TILE_SIZE + TILE_SIZE / 2, gy * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y),
-            area(),
+            area({ shape: new Rect(vec2(-6, -6), 12, 12) }),
             anchor("center"),
             "explosion",
             "killZone",
@@ -415,11 +494,36 @@ scene("game", () => {
         wait(0.5, () => {
             if (exp.exists()) destroy(exp);
         });
+        
+        return exp;
+    }
+    
+    function spawnPowerup(gx, gy) {
+        const rand = Math.random();
+        let type, spriteName;
+        
+        if (rand < 0.5) {
+            type = BOMB_POWERUP;
+            spriteName = "bombPower";
+        } else {
+            type = FIRE_POWERUP;
+            spriteName = "firePower";
+        }
+        
+        const powerup = add([
+            sprite(spriteName),
+            pos(gx * TILE_SIZE + TILE_SIZE / 2, gy * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y),
+            area(),
+            anchor("center"),
+            "powerup",
+            { powerType: type },
+        ]);
     }
     
     function explodeBomb(bomb) {
         const gx = bomb.gridX;
         const gy = bomb.gridY;
+        const range = bomb.range || 2;
         destroy(bomb);
         
         spawnExplosion(gx, gy);
@@ -432,7 +536,7 @@ scene("game", () => {
         ];
         
         directions.forEach(dir => {
-            for (let i = 1; i <= 2; i++) {
+            for (let i = 1; i <= range; i++) {
                 const nx = gx + dir.dx * i;
                 const ny = gy + dir.dy * i;
                 
@@ -447,12 +551,15 @@ scene("game", () => {
                     get("destructible").forEach(box => {
                         if (box.gridX === nx && box.gridY === ny) {
                             destroy(box);
+                            if (Math.random() < 0.6) {
+                                spawnPowerup(nx, ny);
+                            }
                         }
                     });
                     break;
                 }
                 
-                const chainBomb = get("bomb").find(b => b.gridX === nx && b.gridY === ny);
+                const chainBomb = get("bombObstacle").find(b => b.gridX === nx && b.gridY === ny);
                 if (chainBomb) {
                     wait(0.1, () => {
                         if (chainBomb.exists()) explodeBomb(chainBomb);
@@ -463,11 +570,38 @@ scene("game", () => {
         });
     }
     
-    const zombieConfigs = [
-        { x: MAP_WIDTH - 2, y: MAP_HEIGHT - 2 },
-        { x: MAP_WIDTH - 2, y: 2 },
-        { x: 2, y: MAP_HEIGHT - 2 },
+    player.onCollide("powerup", (powerup) => {
+        if (powerup.powerType === BOMB_POWERUP) {
+            maxBombs++;
+            updateStats();
+        } else if (powerup.powerType === FIRE_POWERUP) {
+            firePower++;
+            updateStats();
+        }
+        destroy(powerup);
+    });
+    
+    const zombieConfigs = [];
+    
+    const corners = [
+        { x: MAP_WIDTH - 3, y: MAP_HEIGHT - 3 },
+        { x: MAP_WIDTH - 3, y: 3 },
+        { x: 3, y: MAP_HEIGHT - 3 },
     ];
+    
+    corners.forEach(corner => {
+        let placed = false;
+        for (let dy = 0; dy <= 2 && !placed; dy++) {
+            for (let dx = 0; dx <= 2 && !placed; dx++) {
+                const x = corner.x + dx;
+                const y = corner.y + dy;
+                if (gameMap[y] && gameMap[y][x] === EMPTY) {
+                    zombieConfigs.push({ x, y });
+                    placed = true;
+                }
+            }
+        }
+    });
     
     zombieConfigs.forEach(cfg => {
         const zombie = add([
@@ -516,6 +650,10 @@ scene("game", () => {
     
     player.onCollide("zombie", () => {
         playerHit();
+    });
+    
+    onCollide("zombie", "bombObstacle", (zombie) => {
+        zombie.direction = choose(["up", "down", "left", "right"]);
     });
     
     player.onCollide("explosion", () => {
@@ -596,7 +734,8 @@ scene("game", () => {
         }
     }
     
-    onCollide("explosion", "zombie", () => {
+    onCollide("explosion", "zombie", (exp, zombie) => {
+        destroy(zombie);
         checkWin();
     });
     
