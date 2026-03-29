@@ -30,6 +30,22 @@
     <script type="module">
 import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
 
+if (location.protocol === "file:") {
+    document.body.innerHTML = `
+        <main style="max-width:720px;padding:32px 28px;border:4px solid #4e274b;box-shadow:0 24px 60px rgba(0,0,0,.65),0 0 40px rgba(139,42,87,.35);background:linear-gradient(180deg,#1f0d1a 0%,#120811 100%);color:#f0d59c;line-height:1.5;">
+            <h1 style="font-size:32px;margin-bottom:12px;">Bombervania</h1>
+            <p style="margin-bottom:12px;color:#d9c7cf;">Agora os sprites estao em arquivos separados dentro de <code>assets/</code>. Navegadores bloqueiam esse carregamento quando o jogo e aberto por <code>file://</code>.</p>
+            <p style="margin-bottom:12px;color:#d9c7cf;">Para rodar corretamente:</p>
+            <ol style="padding-left:22px;margin-bottom:14px;color:#f0d59c;">
+                <li>Execute <code>start-local-server.bat</code></li>
+                <li>Abra <code>http://localhost:8080</code></li>
+            </ol>
+            <p style="color:#bfa7b7;">Se preferir, voce tambem pode usar qualquer servidor HTTP local.</p>
+        </main>
+    `;
+    await new Promise(() => {});
+}
+
 kaboom({
     width: 320,
     height: 280,
@@ -55,27 +71,6 @@ const POWER_FIRE = "fire";
 
 let gameMap = [];
 
-function makeSprite(name, width, height, draw) {
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
-    draw(ctx, width, height);
-    loadSprite(name, canvas);
-}
-
-function panel(ctx, x, y, w, h, fill, stroke, accent) {
-    ctx.fillStyle = fill;
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
-    ctx.fillStyle = accent;
-    ctx.fillRect(x + 4, y + 4, w - 8, 2);
-    ctx.fillRect(x + 4, h + y - 6, w - 8, 2);
-}
-
 function worldPos(gx, gy) {
     return vec2(gx * TILE_SIZE + TILE_SIZE / 2, gy * TILE_SIZE + TILE_SIZE / 2 + MAP_OFFSET_Y);
 }
@@ -91,341 +86,40 @@ function inBounds(gx, gy) {
     return gx >= 0 && gx < MAP_WIDTH && gy >= 0 && gy < MAP_HEIGHT;
 }
 
-function generateAssets() {
-    makeSprite("menuBackdrop", 320, 280, (ctx, w, h) => {
-        const sky = ctx.createLinearGradient(0, 0, 0, h);
-        sky.addColorStop(0, "#301529");
-        sky.addColorStop(0.55, "#120812");
-        sky.addColorStop(1, "#050405");
-        ctx.fillStyle = sky;
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.fillStyle = "rgba(235, 212, 184, 0.95)";
-        ctx.beginPath();
-        ctx.arc(248, 54, 26, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "rgba(95, 38, 70, 0.35)";
-        ctx.beginPath();
-        ctx.arc(258, 48, 30, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#080608";
-        ctx.fillRect(0, 190, w, 90);
-        ctx.fillRect(18, 136, 28, 84);
-        ctx.fillRect(52, 112, 24, 108);
-        ctx.fillRect(78, 126, 22, 94);
-        ctx.fillRect(108, 84, 38, 136);
-        ctx.fillRect(154, 102, 26, 118);
-        ctx.fillRect(188, 118, 24, 102);
-        ctx.fillRect(220, 96, 30, 124);
-        ctx.fillRect(258, 128, 24, 92);
-
-        ctx.beginPath();
-        ctx.moveTo(110, 84);
-        ctx.lineTo(127, 56);
-        ctx.lineTo(144, 84);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(221, 96);
-        ctx.lineTo(236, 70);
-        ctx.lineTo(251, 96);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(52, 112);
-        ctx.lineTo(64, 88);
-        ctx.lineTo(76, 112);
-        ctx.fill();
-
-        ctx.fillStyle = "#7f2837";
-        ctx.fillRect(118, 114, 6, 10);
-        ctx.fillRect(132, 114, 6, 10);
-        ctx.fillRect(228, 126, 6, 10);
-        ctx.fillRect(238, 126, 6, 10);
-        ctx.fillRect(58, 136, 5, 8);
-        ctx.fillRect(66, 136, 5, 8);
-
-        ctx.fillStyle = "rgba(185, 130, 150, 0.12)";
-        ctx.fillRect(0, 202, w, 10);
-        ctx.fillRect(0, 224, w, 14);
-        ctx.fillRect(0, 250, w, 24);
-
-        ctx.fillStyle = "rgba(220, 220, 220, 0.07)";
-        ctx.fillRect(18, 34, 48, 2);
-        ctx.fillRect(74, 24, 26, 2);
-        ctx.fillRect(200, 88, 34, 2);
-    });
-
-    makeSprite("gameBackdrop", 320, 280, (ctx, w, h) => {
-        const bg = ctx.createLinearGradient(0, 0, 0, h);
-        bg.addColorStop(0, "#1c0d18");
-        bg.addColorStop(0.2, "#150b13");
-        bg.addColorStop(1, "#09070a");
-        ctx.fillStyle = bg;
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.fillStyle = "rgba(143, 48, 93, 0.14)";
-        ctx.fillRect(0, h - 44, w, 28);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
-        ctx.fillRect(0, HUD_HEIGHT, w, 2);
-        ctx.fillRect(0, HUD_HEIGHT + MAP_HEIGHT * TILE_SIZE - 2, w, 2);
-    });
-
-    makeSprite("hudPanel", 320, 40, (ctx, w, h) => {
-        const grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, "#28111e");
-        grad.addColorStop(1, "#140912");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = "#4f243f";
-        ctx.fillRect(0, h - 3, w, 3);
-        ctx.fillStyle = "rgba(255,255,255,0.08)";
-        ctx.fillRect(0, 0, w, 2);
-        ctx.fillStyle = "#7d395e";
-        ctx.fillRect(98, 8, 124, 1);
-        ctx.fillRect(98, 31, 124, 1);
-    });
-
-    makeSprite("menuPlaque", 220, 70, (ctx, w, h) => {
-        panel(ctx, 0, 0, w, h, "#170d17", "#734162", "#a35e86");
-        ctx.fillStyle = "#4e2842";
-        ctx.fillRect(14, 14, w - 28, h - 28);
-        ctx.fillStyle = "#a35e86";
-        ctx.fillRect(20, 20, w - 40, 2);
-        ctx.fillRect(20, h - 22, w - 40, 2);
-    });
-
-    makeSprite("menuButton", 154, 28, (ctx, w, h) => {
-        panel(ctx, 0, 0, w, h, "#190f19", "#57324d", "#7e5071");
-    });
-
-    makeSprite("menuButtonActive", 154, 28, (ctx, w, h) => {
-        panel(ctx, 0, 0, w, h, "#2a1623", "#c89b60", "#f0c97c");
-        ctx.fillStyle = "rgba(255, 212, 120, 0.18)";
-        ctx.fillRect(6, 6, w - 12, h - 12);
-    });
-
-    makeSprite("controlsPanel", 280, 184, (ctx, w, h) => {
-        panel(ctx, 0, 0, w, h, "#160d15", "#673855", "#a76487");
-        ctx.fillStyle = "rgba(255,255,255,0.04)";
-        ctx.fillRect(14, 36, w - 28, 2);
-        ctx.fillRect(14, h - 22, w - 28, 2);
-    });
-
-    makeSprite("pausePanel", 228, 176, (ctx, w, h) => {
-        panel(ctx, 0, 0, w, h, "#130c12", "#7a4768", "#d6b064");
-        ctx.fillStyle = "rgba(255,255,255,0.04)";
-        ctx.fillRect(12, 18, w - 24, h - 36);
-        ctx.fillStyle = "#4b2940";
-        ctx.fillRect(20, 46, w - 40, 1);
-        ctx.fillRect(20, h - 24, w - 40, 1);
-    });
-
-    makeSprite("selectorBat", 18, 10, (ctx) => {
-        ctx.fillStyle = "#e2be73";
-        ctx.fillRect(8, 3, 2, 4);
-        ctx.fillRect(3, 4, 5, 2);
-        ctx.fillRect(10, 4, 5, 2);
-        ctx.fillRect(1, 5, 3, 2);
-        ctx.fillRect(14, 5, 3, 2);
-    });
-
-    makeSprite("floor", 16, 16, (ctx) => {
-        ctx.fillStyle = "#201820";
-        ctx.fillRect(0, 0, 16, 16);
-        ctx.fillStyle = "#2e2330";
-        ctx.fillRect(1, 1, 14, 14);
-        ctx.fillStyle = "#3c3140";
-        ctx.fillRect(2, 2, 12, 2);
-        ctx.fillRect(2, 10, 12, 1);
-        ctx.fillStyle = "#5f2d47";
-        ctx.fillRect(3, 13, 10, 1);
-        ctx.fillStyle = "#181018";
-        ctx.fillRect(4, 5, 1, 5);
-        ctx.fillRect(9, 7, 4, 1);
-    });
-
-    makeSprite("wall", 16, 16, (ctx) => {
-        ctx.fillStyle = "#17131a";
-        ctx.fillRect(0, 0, 16, 16);
-        ctx.fillStyle = "#53495c";
-        ctx.fillRect(1, 1, 14, 14);
-        ctx.fillStyle = "#72667d";
-        ctx.fillRect(2, 2, 12, 2);
-        ctx.fillRect(2, 12, 12, 2);
-        ctx.fillStyle = "#403848";
-        ctx.fillRect(3, 4, 3, 8);
-        ctx.fillRect(10, 4, 3, 8);
-        ctx.fillStyle = "#8a2f56";
-        ctx.fillRect(7, 5, 2, 6);
-        ctx.fillStyle = "#a98fae";
-        ctx.fillRect(2, 4, 1, 8);
-        ctx.fillRect(13, 4, 1, 8);
-    });
-
-    makeSprite("box", 16, 16, (ctx) => {
-        ctx.fillStyle = "#120d0f";
-        ctx.fillRect(0, 0, 16, 16);
-        ctx.fillStyle = "#4b3021";
-        ctx.beginPath();
-        ctx.moveTo(8, 1);
-        ctx.lineTo(14, 5);
-        ctx.lineTo(12, 14);
-        ctx.lineTo(4, 14);
-        ctx.lineTo(2, 5);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = "#6a432f";
-        ctx.beginPath();
-        ctx.moveTo(8, 3);
-        ctx.lineTo(12, 6);
-        ctx.lineTo(11, 12);
-        ctx.lineTo(5, 12);
-        ctx.lineTo(4, 6);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = "#d7c6a0";
-        ctx.fillRect(7, 5, 2, 6);
-        ctx.fillRect(5, 7, 6, 2);
-    });
-
-    makeSprite("player", 16, 16, (ctx) => {
-        ctx.fillStyle = "#0f0b11";
-        ctx.fillRect(4, 1, 8, 2);
-        ctx.fillRect(3, 3, 10, 1);
-        ctx.fillStyle = "#d8c2a8";
-        ctx.fillRect(5, 4, 6, 4);
-        ctx.fillStyle = "#2e1629";
-        ctx.fillRect(4, 8, 8, 5);
-        ctx.fillStyle = "#7a2033";
-        ctx.fillRect(6, 8, 4, 5);
-        ctx.fillStyle = "#c3a35c";
-        ctx.fillRect(5, 9, 6, 1);
-        ctx.fillStyle = "#1a141b";
-        ctx.fillRect(4, 13, 3, 2);
-        ctx.fillRect(9, 13, 3, 2);
-        ctx.fillStyle = "#efe8df";
-        ctx.fillRect(6, 5, 1, 1);
-        ctx.fillRect(9, 5, 1, 1);
-    });
-
-    makeSprite("bomb", 16, 16, (ctx) => {
-        ctx.fillStyle = "#0e0d10";
-        ctx.beginPath();
-        ctx.arc(8, 9, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#38363e";
-        ctx.beginPath();
-        ctx.arc(8, 9, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#6c6972";
-        ctx.fillRect(6, 5, 2, 1);
-        ctx.fillRect(5, 6, 1, 1);
-        ctx.fillStyle = "#8e2233";
-        ctx.fillRect(8, 2, 2, 3);
-        ctx.fillRect(10, 1, 1, 2);
-        ctx.fillStyle = "#ffcc5f";
-        ctx.fillRect(10, 0, 1, 1);
-    });
-
-    makeSprite("explosion", 16, 16, (ctx) => {
-        ctx.fillStyle = "#82cfff";
-        ctx.fillRect(6, 1, 4, 14);
-        ctx.fillRect(1, 6, 14, 4);
-        ctx.fillStyle = "#d7f5ff";
-        ctx.fillRect(7, 2, 2, 12);
-        ctx.fillRect(2, 7, 12, 2);
-        ctx.fillStyle = "#4aa8ff";
-        ctx.fillRect(4, 4, 8, 8);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(6, 6, 4, 4);
-    });
-
-    makeSprite("zombie", 16, 16, (ctx) => {
-        ctx.fillStyle = "#34543a";
-        ctx.fillRect(4, 2, 8, 5);
-        ctx.fillStyle = "#82b27f";
-        ctx.fillRect(5, 3, 6, 4);
-        ctx.fillStyle = "#e16068";
-        ctx.fillRect(6, 4, 1, 1);
-        ctx.fillRect(9, 4, 1, 1);
-        ctx.fillStyle = "#2c3f2b";
-        ctx.fillRect(3, 8, 10, 4);
-        ctx.fillStyle = "#576b72";
-        ctx.fillRect(5, 8, 6, 3);
-        ctx.fillStyle = "#1a1618";
-        ctx.fillRect(4, 12, 3, 3);
-        ctx.fillRect(9, 12, 3, 3);
-    });
-
-    makeSprite("heart", 10, 9, (ctx) => {
-        ctx.fillStyle = "#d93a5d";
-        ctx.fillRect(2, 0, 2, 2);
-        ctx.fillRect(6, 0, 2, 2);
-        ctx.fillRect(1, 1, 8, 3);
-        ctx.fillRect(2, 4, 6, 2);
-        ctx.fillRect(3, 6, 4, 1);
-        ctx.fillRect(4, 7, 2, 1);
-    });
-
-    makeSprite("heartEmpty", 10, 9, (ctx) => {
-        ctx.fillStyle = "#5a3045";
-        ctx.fillRect(2, 0, 2, 2);
-        ctx.fillRect(6, 0, 2, 2);
-        ctx.fillRect(1, 1, 8, 1);
-        ctx.fillRect(1, 2, 1, 2);
-        ctx.fillRect(8, 2, 1, 2);
-        ctx.fillRect(2, 4, 1, 2);
-        ctx.fillRect(7, 4, 1, 2);
-        ctx.fillRect(3, 6, 1, 1);
-        ctx.fillRect(6, 6, 1, 1);
-        ctx.fillRect(4, 7, 2, 1);
-    });
-
-    makeSprite("bombPower", 12, 12, (ctx) => {
-        ctx.fillStyle = "#131216";
-        ctx.beginPath();
-        ctx.arc(5, 7, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#4f4d57";
-        ctx.beginPath();
-        ctx.arc(5, 7, 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#d6b064";
-        ctx.fillRect(8, 1, 3, 1);
-        ctx.fillRect(9, 0, 1, 3);
-        ctx.fillRect(5, 1, 2, 2);
-        ctx.fillStyle = "#8e2233";
-        ctx.fillRect(6, 0, 1, 1);
-    });
-
-    makeSprite("firePower", 12, 12, (ctx) => {
-        ctx.fillStyle = "#ffd173";
-        ctx.fillRect(8, 1, 3, 1);
-        ctx.fillRect(9, 0, 1, 3);
-        ctx.fillStyle = "#ff9c32";
-        ctx.beginPath();
-        ctx.moveTo(5, 1);
-        ctx.lineTo(8, 5);
-        ctx.lineTo(7, 10);
-        ctx.lineTo(4, 11);
-        ctx.lineTo(2, 8);
-        ctx.lineTo(2, 5);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = "#ffe59f";
-        ctx.beginPath();
-        ctx.moveTo(5, 3);
-        ctx.lineTo(6, 6);
-        ctx.lineTo(5, 9);
-        ctx.lineTo(4, 7);
-        ctx.lineTo(3, 6);
-        ctx.closePath();
-        ctx.fill();
-    });
-}
-
-generateAssets();
+await Promise.all([
+    loadSpriteAtlas("assets/backgrounds/backdrops.svg", {
+        menuBackdrop: { x: 0, y: 0, width: 320, height: 280 },
+        gameBackdrop: { x: 320, y: 0, width: 320, height: 280 },
+    }),
+    loadSpriteAtlas("assets/ui/panels.svg", {
+        hudPanel: { x: 0, y: 0, width: 320, height: 40 },
+        menuPlaque: { x: 0, y: 40, width: 220, height: 70 },
+        menuButton: { x: 0, y: 110, width: 154, height: 28 },
+        menuButtonActive: { x: 0, y: 138, width: 154, height: 28 },
+        controlsPanel: { x: 0, y: 166, width: 280, height: 184 },
+        pausePanel: { x: 0, y: 350, width: 228, height: 176 },
+    }),
+    loadSpriteAtlas("assets/ui/icons.svg", {
+        heart: { x: 0, y: 0, width: 10, height: 9 },
+        heartEmpty: { x: 10, y: 0, width: 10, height: 9 },
+        selectorBat: { x: 20, y: 0, width: 18, height: 10 },
+    }),
+    loadSpriteAtlas("assets/world/tiles.svg", {
+        floor: { x: 0, y: 0, width: 16, height: 16 },
+        wall: { x: 16, y: 0, width: 16, height: 16 },
+        box: { x: 32, y: 0, width: 16, height: 16 },
+    }),
+    loadSpriteAtlas("assets/characters/chars.svg", {
+        player: { x: 0, y: 0, width: 16, height: 16 },
+        zombie: { x: 16, y: 0, width: 16, height: 16 },
+    }),
+    loadSpriteAtlas("assets/items/items.svg", {
+        bomb: { x: 0, y: 0, width: 16, height: 16 },
+        explosion: { x: 16, y: 0, width: 16, height: 16 },
+        bombPower: { x: 32, y: 0, width: 12, height: 12 },
+        firePower: { x: 44, y: 0, width: 12, height: 12 },
+    }),
+]);
 
 function generateMap() {
     gameMap = [];
