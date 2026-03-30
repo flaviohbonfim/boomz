@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explode The Zombies</title>
+    <title>BoomZ!</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -33,7 +33,7 @@ import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
 if (location.protocol === "file:") {
     document.body.innerHTML = `
         <main style="max-width:720px;padding:32px 28px;border:4px solid #3f4742;box-shadow:0 24px 60px rgba(0,0,0,.65),0 0 40px rgba(207,154,60,.18);background:linear-gradient(180deg,#232a26 0%,#141816 100%);color:#f0d59c;line-height:1.5;">
-            <h1 style="font-size:32px;margin-bottom:12px;">Explode The Zombies</h1>
+            <h1 style="font-size:32px;margin-bottom:12px;">BoomZ!</h1>
             <p style="margin-bottom:12px;color:#c9d0cb;">Agora os sprites estao em arquivos separados dentro de <code>assets/</code>. Navegadores bloqueiam esse carregamento quando o jogo e aberto por <code>file://</code>.</p>
             <p style="margin-bottom:12px;color:#c9d0cb;">Para rodar corretamente:</p>
             <ol style="padding-left:22px;margin-bottom:14px;color:#f0d59c;">
@@ -67,7 +67,7 @@ const PLAYER_SHEET_PATH = "assets/characters/player-sheet-refined-v2.svg";
 const ZOMBIE_SHEET_PATH = "assets/characters/zombie-sheet-refined-v2.svg";
 const BOMB_SHEET_PATH = "assets/items/bomb-sheet-refined-v2.svg";
 const EXPLOSION_SHEET_PATH = "assets/items/explosion-sheet-refined-v2.svg";
-const GAME_TITLE = "EXPLODE THE ZOMBIES";
+const GAME_TITLE = "BOOMZ!";
 const GAME_KICKER = "OUTBREAK RESPONSE";
 const GAME_TAGLINE = "Varra as ruas, exploda barricadas e limpe a horda.";
 
@@ -268,6 +268,7 @@ await Promise.all([
         heartEmpty: { x: 10, y: 0, width: 10, height: 9 },
         selectorBat: { x: 20, y: 0, width: 18, height: 10 },
     }),
+    loadSprite("gameLogo", "assets/ui/logo.png"),
     loadSpriteAtlas("assets/world/tiles.svg", {
         floor: { x: 0, y: 0, width: 16, height: 16 },
         wall: { x: 16, y: 0, width: 16, height: 16 },
@@ -366,37 +367,112 @@ scene("menu", () => {
 
     add([
         sprite("menuPlaque"),
-        pos(width() / 2, 58),
+        pos(width() / 2, 54),
         anchor("center"),
     ]);
 
     add([
         text(GAME_KICKER, { size: 10 }),
-        pos(width() / 2, 23),
+        pos(width() / 2, 18),
         anchor("center"),
         color(218, 170, 74),
     ]);
 
     add([
-        text("EXPLODE THE", { size: 22 }),
-        pos(width() / 2, 44),
+        sprite("gameLogo"),
+        pos(width() / 2 + 3, 57),
         anchor("center"),
-        color(241, 220, 171),
+        scale(0.084),
+        color(12, 8, 8),
+        opacity(0.34),
     ]);
 
     add([
-        text("ZOMBIES", { size: 22 }),
-        pos(width() / 2, 65),
+        sprite("gameLogo"),
+        pos(width() / 2, 54),
         anchor("center"),
-        color(230, 111, 69),
+        scale(0.084),
     ]);
 
     add([
         text(GAME_TAGLINE, { size: 10 }),
-        pos(width() / 2, 112),
+        pos(width() / 2, 97),
         anchor("center"),
         color(191, 200, 194),
     ]);
+
+    add([
+        rect(178, 18),
+        pos(width() / 2, 124),
+        anchor("center"),
+        color(14, 17, 15),
+        opacity(0.42),
+    ]);
+    add([
+        rect(178, 1),
+        pos(width() / 2, 116),
+        anchor("center"),
+        color(86, 99, 91),
+        opacity(0.24),
+    ]);
+    add([
+        rect(178, 1),
+        pos(width() / 2, 132),
+        anchor("center"),
+        color(207, 154, 60),
+        opacity(0.14),
+    ]);
+
+    const menuPlayer = add([
+        sprite("playerAnim", { anim: "walk-side" }),
+        pos(-40, 138),
+        anchor("center"),
+        scale(1.02),
+    ]);
+    const menuZombie = add([
+        sprite("zombieAnim", { anim: "walk-side" }),
+        pos(-70, 140),
+        anchor("center"),
+        scale(1.02),
+    ]);
+    const chaseDust = [0, 1, 2].map((index) => add([
+        circle(2 + index * 0.45),
+        pos(-100, -100),
+        anchor("center"),
+        scale(1),
+        color(174, 160, 132),
+        opacity(0),
+        z(1),
+    ]));
+
+    const chasePatterns = [
+        { leader: "zombie", chaser: "player", direction: 1 },
+        { leader: "player", chaser: "zombie", direction: -1 },
+    ];
+    let chaseIndex = 0;
+    let chaseTimer = 0;
+    const chaseDuration = 3.6;
+    const chaseResetDelay = 0.55;
+    const chaseCycleDuration = chaseDuration + chaseResetDelay;
+
+    function configureChase(index) {
+        chaseIndex = index % chasePatterns.length;
+        chaseTimer = 0;
+
+        const pattern = chasePatterns[chaseIndex];
+        menuPlayer.play("walk-side");
+        menuZombie.play("walk-side");
+        menuPlayer.flipX = pattern.direction < 0;
+        menuZombie.flipX = pattern.direction < 0;
+        menuPlayer.hidden = false;
+        menuZombie.hidden = false;
+        chaseDust.forEach((puff) => {
+            puff.hidden = false;
+            puff.opacity = 0;
+        });
+    }
+
+    configureChase(0);
 
     const options = [
         { label: "INICIAR OPERACAO", target: "game" },
@@ -436,25 +512,6 @@ scene("menu", () => {
         scale(vec2(-1, 1)),
     ]);
 
-    const heroShowcase = add([
-        sprite("playerAnim", { anim: "idle-side" }),
-        pos(76, 128),
-        anchor("center"),
-        scale(1.08),
-    ]);
-    const zombieShowcase = add([
-        sprite("zombieAnim", { anim: "idle-side", flipX: true }),
-        pos(width() - 76, 130),
-        anchor("center"),
-        scale(1.08),
-    ]);
-    const bombShowcase = add([
-        sprite("bombAnim", { anim: "fuse" }),
-        pos(width() / 2, 148),
-        anchor("center"),
-        scale(1.12),
-    ]);
-
     function refreshMenu() {
         buttons.forEach((button, index) => {
             button.use(sprite(index === selected ? "menuButtonActive" : "menuButton"));
@@ -468,9 +525,50 @@ scene("menu", () => {
         const pulse = 1 + Math.sin(time() * 8) * 0.08;
         leftBat.scale = vec2(pulse, pulse);
         rightBat.scale = vec2(-pulse, pulse);
-        heroShowcase.pos.y = 128 + Math.sin(time() * 2.8) * 2;
-        zombieShowcase.pos.y = 130 + Math.sin(time() * 2.8 + 0.9) * 2;
-        bombShowcase.pos.y = 148 + Math.sin(time() * 4.2) * 1.5;
+
+        chaseTimer += dt();
+        if (chaseTimer >= chaseCycleDuration) {
+            configureChase(chaseIndex + 1);
+        }
+
+        if (chaseTimer <= chaseDuration) {
+            const pattern = chasePatterns[chaseIndex];
+            const progress = chaseTimer / chaseDuration;
+            const direction = pattern.direction;
+            const laneStart = direction === 1 ? -34 : width() + 34;
+            const laneEnd = direction === 1 ? width() + 34 : -34;
+            const leadX = laneStart + (laneEnd - laneStart) * progress;
+            const gap = 28 - Math.sin(progress * Math.PI) * 10;
+            const chaseX = leadX - direction * gap;
+
+            const leaderSprite = pattern.leader === "player" ? menuPlayer : menuZombie;
+            const chaserSprite = pattern.chaser === "player" ? menuPlayer : menuZombie;
+
+            leaderSprite.hidden = false;
+            chaserSprite.hidden = false;
+
+            leaderSprite.pos = vec2(leadX, 124 + Math.sin(time() * 12.5) * 1.2);
+            chaserSprite.pos = vec2(chaseX, 127 + Math.sin(time() * 12.5 + 0.8) * 1.2);
+
+            chaseDust.forEach((puff, index) => {
+                const drift = 10 + index * 7 + Math.sin(time() * 10 + index) * 1.4;
+                const sway = 2 + index * 1.4;
+                puff.hidden = false;
+                puff.pos = vec2(
+                    chaserSprite.pos.x - direction * drift,
+                    chaserSprite.pos.y + 7 + Math.sin(time() * 8 + index) * sway,
+                );
+                puff.opacity = 0.18 + index * 0.08 + Math.sin(time() * 12 + index) * 0.04;
+                puff.scale = vec2(1 + index * 0.16, 0.85 + index * 0.08);
+            });
+        } else {
+            menuPlayer.hidden = true;
+            menuZombie.hidden = true;
+            chaseDust.forEach((puff) => {
+                puff.hidden = true;
+                puff.opacity = 0;
+            });
+        }
     });
 
     onKeyPress("up", () => {
@@ -906,9 +1004,16 @@ scene("game", () => {
         ];
 
         const hasStats = statLines.length > 0;
-        const panelY = height() / 2 + (hasStats ? 10 : -6);
-        const subtitleY = panelY - (hasStats ? 48 : 42);
-        const buttonStartY = panelY + (hasStats ? 42 : 24);
+        const panelY = height() / 2 + (hasStats ? -4 : -6);
+        const titleSize = hasStats ? 20 : 24;
+        const subtitleSize = hasStats ? 10 : 11;
+        const statSize = hasStats ? 11 : 12;
+        const titleY = panelY - (hasStats ? 64 : 68);
+        const subtitleY = panelY - (hasStats ? 44 : 42);
+        const statStartY = panelY - 24;
+        const statSpacing = hasStats ? 15 : 18;
+        const buttonStartY = panelY + (hasStats ? 32 : 24);
+        const buttonSpacing = hasStats ? 26 : 28;
 
         add([
             rect(width(), height()),
@@ -928,8 +1033,8 @@ scene("game", () => {
             "resultUI",
         ]);
         add([
-            text(title, { size: 24 }),
-            pos(width() / 2, panelY - 68),
+            text(title, { size: titleSize }),
+            pos(width() / 2, titleY),
             anchor("center"),
             color(tint[0], tint[1], tint[2]),
             fixed(),
@@ -937,7 +1042,7 @@ scene("game", () => {
             "resultUI",
         ]);
         add([
-            text(subtitle, { size: 11 }),
+            text(subtitle, { size: subtitleSize }),
             pos(width() / 2, subtitleY),
             anchor("center"),
             color(196, 173, 186),
@@ -948,8 +1053,8 @@ scene("game", () => {
 
         statLines.forEach((line, index) => {
             add([
-                text(line, { size: 12 }),
-                pos(width() / 2, panelY - 18 + index * 18),
+                text(line, { size: statSize }),
+                pos(width() / 2, statStartY + index * statSpacing),
                 anchor("center"),
                 color(224, 214, 221),
                 fixed(),
@@ -960,7 +1065,7 @@ scene("game", () => {
 
         resultSelection = 0;
         resultOptions.forEach((option, index) => {
-            const y = buttonStartY + index * 28;
+            const y = buttonStartY + index * buttonSpacing;
             const button = add([
                 sprite(index === 0 ? "menuButtonActive" : "menuButton"),
                 pos(width() / 2, y),
