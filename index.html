@@ -71,6 +71,21 @@ const GAME_TITLE = "EXPLODE THE ZOMBIES";
 const GAME_KICKER = "OUTBREAK RESPONSE";
 const GAME_TAGLINE = "Varra as ruas, exploda barricadas e limpe a horda.";
 
+const SFX_DEFAULTS = {
+    uiMove: { volume: 0.35 },
+    uiConfirm: { volume: 0.4 },
+    uiBack: { volume: 0.3 },
+    pauseToggle: { volume: 0.3 },
+    bombPlace: { volume: 0.42 },
+    bombAlert: { volume: 0.32 },
+    explosionSfx: { volume: 0.6 },
+    playerHitSfx: { volume: 0.45 },
+    zombieDown: { volume: 0.28 },
+    pickupSfx: { volume: 0.4 },
+    victorySfx: { volume: 0.45 },
+    failureSfx: { volume: 0.42 },
+};
+
 const SOLID = 1;
 const DESTRUCTIBLE = 2;
 const EMPTY = 0;
@@ -136,6 +151,14 @@ function actorDepth(posY) {
     return 20 + (posY - MAP_OFFSET_Y) / TILE_SIZE;
 }
 
+function playSfx(name, options = {}) {
+    try {
+        return play(name, { ...(SFX_DEFAULTS[name] || {}), ...options });
+    } catch {
+        return null;
+    }
+}
+
 await Promise.all([
     loadSpriteAtlas("assets/backgrounds/backdrops.svg", {
         menuBackdrop: { x: 0, y: 0, width: 304, height: 280 },
@@ -189,6 +212,18 @@ await Promise.all([
         sliceY: 5,
         anims: EXPLOSION_ANIMS,
     }),
+    loadSound("uiMove", "assets/audio/ui-move.wav"),
+    loadSound("uiConfirm", "assets/audio/ui-confirm.wav"),
+    loadSound("uiBack", "assets/audio/ui-back.wav"),
+    loadSound("pauseToggle", "assets/audio/pause-toggle.wav"),
+    loadSound("bombPlace", "assets/audio/bomb-place.wav"),
+    loadSound("bombAlert", "assets/audio/bomb-alert.wav"),
+    loadSound("explosionSfx", "assets/audio/explosion.wav"),
+    loadSound("playerHitSfx", "assets/audio/player-hit.wav"),
+    loadSound("zombieDown", "assets/audio/zombie-down.wav"),
+    loadSound("pickupSfx", "assets/audio/pickup.wav"),
+    loadSound("victorySfx", "assets/audio/victory.wav"),
+    loadSound("failureSfx", "assets/audio/failure.wav"),
 ]);
 
 function generateMap() {
@@ -341,15 +376,18 @@ scene("menu", () => {
 
     onKeyPress("up", () => {
         selected = (selected - 1 + options.length) % options.length;
+        playSfx("uiMove");
         refreshMenu();
     });
 
     onKeyPress("down", () => {
         selected = (selected + 1) % options.length;
+        playSfx("uiMove");
         refreshMenu();
     });
 
     onKeyPress("enter", () => {
+        playSfx("uiConfirm");
         go(options[selected].target);
     });
 
@@ -433,8 +471,14 @@ scene("controls", () => {
         color(153, 129, 145),
     ]);
 
-    onKeyPress("enter", () => go("menu"));
-    onKeyPress("escape", () => go("menu"));
+    onKeyPress("enter", () => {
+        playSfx("uiBack");
+        go("menu");
+    });
+    onKeyPress("escape", () => {
+        playSfx("uiBack");
+        go("menu");
+    });
 });
 
 scene("game", () => {
@@ -699,6 +743,7 @@ scene("game", () => {
 
     function runResultSelection() {
         if (resultOptions.length === 0) return;
+        playSfx("uiConfirm");
         resultOptions[resultSelection].action();
     }
 
@@ -811,6 +856,7 @@ scene("game", () => {
         if (zombie.visual && zombie.visual.exists()) {
             destroy(zombie.visual);
         }
+        playSfx("zombieDown");
         destroy(zombie);
         enemiesDefeated += 1;
     }
@@ -881,6 +927,7 @@ scene("game", () => {
         if (!bomb.exists()) return;
 
         const { gridX, gridY, range } = bomb;
+        playSfx("explosionSfx");
         destroy(bomb);
 
         if (player.passThroughBomb === bomb) {
@@ -953,12 +1000,14 @@ scene("game", () => {
             { gridX: x, gridY: y, range: firePower, phase: "fuse" },
         ]);
 
+        playSfx("bombPlace");
         player.passThroughBomb = bomb;
 
         wait(2.35, () => {
             if (!bomb.exists()) return;
             bomb.play("alert");
             bomb.phase = "alert";
+            playSfx("bombAlert");
         });
 
         wait(3, () => explodeBomb(bomb));
@@ -1134,16 +1183,21 @@ scene("game", () => {
             updateStats();
             showToast("+ Alcance", [255, 168, 87]);
         }
+        playSfx("pickupSfx");
         destroy(powerup);
     });
 
     function endRun(message, tint, restartDelay) {
         if (runEnded) return;
+        if (message === "OPERACAO FALHOU") {
+            playSfx("failureSfx");
+        }
         openResultScreen(message, tint, "Escolha sua proxima acao", []);
     }
 
     function showVictorySummary() {
         if (runEnded) return;
+        playSfx("victorySfx");
 
         const lines = [
             `Tempo: ${formatBattleTime(Date.now() - battleStartedAt)}`,
@@ -1158,6 +1212,7 @@ scene("game", () => {
 
         lives -= 1;
         updateHearts();
+        playSfx("playerHitSfx");
 
         if (lives <= 0) {
             endRun("OPERACAO FALHOU", [219, 76, 98], 2);
@@ -1215,6 +1270,7 @@ scene("game", () => {
     }
 
     function runPauseSelection() {
+        playSfx("uiConfirm");
         pauseOptions[pauseSelection].action();
     }
 
@@ -1299,8 +1355,10 @@ scene("game", () => {
         if (get("resultUI").length > 0) return;
 
         if (isPaused) {
+            playSfx("pauseToggle");
             closePause();
         } else {
+            playSfx("pauseToggle");
             openPause();
         }
     }
@@ -1311,22 +1369,26 @@ scene("game", () => {
     onKeyPress("up", () => {
         if (isPaused) {
             pauseSelection = (pauseSelection - 1 + pauseOptions.length) % pauseOptions.length;
+            playSfx("uiMove");
             refreshPauseMenu();
             return;
         }
         if (runEnded && resultOptions.length > 0) {
             resultSelection = (resultSelection - 1 + resultOptions.length) % resultOptions.length;
+            playSfx("uiMove");
             refreshResultMenu();
         }
     });
     onKeyPress("down", () => {
         if (isPaused) {
             pauseSelection = (pauseSelection + 1) % pauseOptions.length;
+            playSfx("uiMove");
             refreshPauseMenu();
             return;
         }
         if (runEnded && resultOptions.length > 0) {
             resultSelection = (resultSelection + 1) % resultOptions.length;
+            playSfx("uiMove");
             refreshResultMenu();
         }
     });
@@ -1342,10 +1404,16 @@ scene("game", () => {
     onKeyPress("escape", togglePause);
     onKeyPress("p", togglePause);
     onKeyPress("r", () => {
-        if (isPaused || (runEnded && resultOptions.length > 0)) go("game");
+        if (isPaused || (runEnded && resultOptions.length > 0)) {
+            playSfx("uiConfirm");
+            go("game");
+        }
     });
     onKeyPress("m", () => {
-        if (isPaused || (runEnded && resultOptions.length > 0)) go("menu");
+        if (isPaused || (runEnded && resultOptions.length > 0)) {
+            playSfx("uiBack");
+            go("menu");
+        }
     });
 
     updateHearts();
