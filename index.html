@@ -197,14 +197,9 @@
             padding: 0;
         }
 
-        .btn-start {
-            background: rgba(40, 80, 160, 0.85);
-            border-color: #4070c0;
-            font-size: 11px;
-            letter-spacing: 0.5px;
-            border-radius: 14px;
-            width: 68px;
-            height: 34px;
+        .btn-y {
+            background: rgba(34, 110, 72, 0.85);
+            border-color: #3a8a58;
         }
 
         .action-btn:active { filter: brightness(1.4); }
@@ -259,7 +254,7 @@
             </div>
             <div class="action-buttons">
                 <button class="action-btn" id="btn-x">X</button>
-                <button class="action-btn btn-start" id="btn-start">START</button>
+                <button class="action-btn btn-y" id="btn-y">Y</button>
             </div>
         </div>
         <div id="console-footer"></div>
@@ -337,8 +332,8 @@ document.getElementById('screen-bezel').appendChild(document.querySelector('canv
         virtualBombPressed = true;
     });
 
-    // START = pause (game) / ignored on menu — handled via virtualPausePressed flag
-    document.getElementById('btn-start').addEventListener('pointerdown', (e) => {
+    // Y = pause (game) / back (menus) — handled via virtualPausePressed flag
+    document.getElementById('btn-y').addEventListener('pointerdown', (e) => {
         e.preventDefault();
         virtualPausePressed = true;
     });
@@ -1004,6 +999,12 @@ scene("controls", () => {
         go("menu");
     });
     onKeyPress("t", () => toggleMute());
+
+    // Virtual controls: X confirms (back), Y goes back
+    onUpdate(() => {
+        if (virtualBombPressed)  { virtualBombPressed  = false; playSfx("uiBack"); go("menu"); }
+        if (virtualPausePressed) { virtualPausePressed = false; playSfx("uiBack"); go("menu"); }
+    });
 });
 
 scene("game", () => {

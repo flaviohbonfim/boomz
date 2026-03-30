@@ -61,7 +61,7 @@ Nenhum `npm install` ou build é necessário. Abra o endereço no navegador e o 
 |--------|-----------------------------------------------|
 | D-pad  | Mover o sobrevivente / navegar nos menus      |
 | **X**  | Armar bomba / confirmar seleção nos menus     |
-| **START** | Pausar / voltar nos menus                 |
+| **Y**  | Pausar / voltar nos menus                     |
 
 ---
 
