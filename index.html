@@ -1537,21 +1537,30 @@ scene("game", () => {
             anchor("center"),
             z(18),
             "bomb",
-            { gridX: x, gridY: y, range: firePower, phase: "fuse" },
+            { gridX: x, gridY: y, range: firePower, phase: "fuse", fuseTimer: 2.35, totalTimer: 3.0 },
         ]);
 
         playSfx("bombPlace");
         player.passThroughBomb = bomb;
-
-        wait(2.35, () => {
-            if (!bomb.exists()) return;
-            bomb.play("alert");
-            bomb.phase = "alert";
-            playSfx("bombAlert");
-        });
-
-        wait(3, () => explodeBomb(bomb));
     }
+
+    onUpdate("bomb", (bomb) => {
+        if (isPaused) return;
+
+        bomb.fuseTimer  -= dt();
+        bomb.totalTimer -= dt();
+
+        if (bomb.fuseTimer <= 0 && bomb.phase === "fuse") {
+            bomb.phase = "alert";
+            bomb.fuseTimer = Infinity;
+            bomb.play("alert");
+            playSfx("bombAlert");
+        }
+
+        if (bomb.totalTimer <= 0) {
+            explodeBomb(bomb);
+        }
+    });
 
     function respawnPlayer() {
         player.pos = worldPos(1, 1);
