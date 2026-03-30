@@ -905,7 +905,10 @@ scene("game", () => {
             { label: "Tela inicial", action: () => go("menu") },
         ];
 
-        const panelY = height() / 2 + (statLines.length > 0 ? 10 : 0);
+        const hasStats = statLines.length > 0;
+        const panelY = height() / 2 + (hasStats ? 10 : -6);
+        const subtitleY = panelY - (hasStats ? 48 : 42);
+        const buttonStartY = panelY + (hasStats ? 42 : 24);
 
         add([
             rect(width(), height()),
@@ -935,7 +938,7 @@ scene("game", () => {
         ]);
         add([
             text(subtitle, { size: 11 }),
-            pos(width() / 2, panelY - 48),
+            pos(width() / 2, subtitleY),
             anchor("center"),
             color(196, 173, 186),
             fixed(),
@@ -957,7 +960,7 @@ scene("game", () => {
 
         resultSelection = 0;
         resultOptions.forEach((option, index) => {
-            const y = panelY + 42 + index * 28;
+            const y = buttonStartY + index * 28;
             const button = add([
                 sprite(index === 0 ? "menuButtonActive" : "menuButton"),
                 pos(width() / 2, y),
