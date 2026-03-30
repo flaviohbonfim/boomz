@@ -46,12 +46,22 @@ Nenhum `npm install` ou build é necessário. Abra o endereço no navegador e o 
 
 ## Controles
 
+### Teclado (desktop)
+
 | Ação                  | Teclas                       |
 |-----------------------|------------------------------|
 | Mover o sobrevivente  | `←` `→` `↑` `↓` ou `WASD`  |
 | Armar bomba           | `SPACE`, `Z` ou `X`          |
 | Pausar operação       | `ESC` ou `P`                 |
 | Silenciar áudio       | `T`                          |
+
+### Controles virtuais (mobile)
+
+| Botão  | Ação                                          |
+|--------|-----------------------------------------------|
+| D-pad  | Mover o sobrevivente / navegar nos menus      |
+| **X**  | Armar bomba / confirmar seleção nos menus     |
+| **START** | Pausar / voltar nos menus                 |
 
 ---
 
@@ -85,6 +95,7 @@ Nenhum `npm install` ou build é necessário. Abra o endereço no navegador e o 
 ```
 boomz/
 ├── index.html                  # Jogo completo (único arquivo de código)
+├── favicon.svg                 # Favicon do jogo
 ├── generate_assets.js          # Gerador de sprites do jogador
 ├── generate_zombie.js          # Gerador de sprites do zumbi
 ├── gen_explosion.py            # Gerador de frames de explosão (Python)
@@ -139,7 +150,7 @@ O jogo é servido como um único `index.html` com o código embutido em `<script
 ### Áudio
 - Música de fundo e ambience
 - SFX para: movimento no menu, confirmação, pausa, colocar bomba, alerta, explosão, dano, morte de zumbi, coleta de power-up, vitória e derrota
-- Controle de volume por categoria; toggle de mute com `T`
+- Controle de volume por categoria; toggle de mute via opção nos menus ou tecla `T`
 
 ---
 
@@ -155,10 +166,17 @@ Esses scripts não precisam ser executados para jogar — os assets já estão g
 
 ---
 
-## Versão
+## Versões
 
-**v0.1** — Lançamento inicial com todas as mecânicas core implementadas:
+### v0.2 — Suporte Mobile & Polimento
+- **Moldura de console portátil** — interface inspirada em handhelds clássicos (Game Boy) com grilles de alto-falante, logo e faixa inferior decorativa; aparece tanto no desktop quanto no mobile
+- **Escala adaptativa** — canvas redimensiona automaticamente para caber na tela do dispositivo preservando a proporção original
+- **Controles virtuais** — D-pad + botão X (bomba/confirmar) + botão START (pausar/voltar), exibidos apenas em dispositivos touch
+- **Navegação por touch em todos os menus** — menu inicial, menu de pausa e tela de resultado navegáveis pelo D-pad e botão X
+- **Toggle de som nos menus** — opção "SOM: ON/OFF" adicionada ao menu inicial e ao menu de pausa; labels de atalho de teclado removidas da tela
+- **Favicon** — ícone SVG com temática de bomba e letra Z dourada
 
+### v0.1 — Lançamento inicial
 - Movimento e colocação de bombas
 - IA de inimigos
 - Sistema de explosões com reação em cadeia

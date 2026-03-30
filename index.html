@@ -4,31 +4,284 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BoomZ!</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background:
-                radial-gradient(circle at top, #5a645c 0%, #252c28 48%, #101412 100%);
+            background: radial-gradient(circle at top, #5a645c 0%, #252c28 48%, #101412 100%);
             font-family: "Trebuchet MS", "Arial Narrow", sans-serif;
+            padding: 24px;
+        }
+
+        @media (pointer: coarse) {
+            body {
+                padding: 0;
+                align-items: stretch;
+                justify-content: stretch;
+                overflow: hidden;
+                height: 100dvh;
+            }
         }
 
         canvas {
-            border: 4px solid #3f4742;
-            box-shadow:
-                0 0 0 4px rgba(11, 15, 13, 0.96),
-                0 24px 60px rgba(0, 0, 0, 0.65),
-                0 0 40px rgba(207, 154, 60, 0.24);
             image-rendering: pixelated;
+            display: block;
+        }
+
+        /* ════════════════════════════════
+           CONSOLE FRAME
+        ════════════════════════════════ */
+        #console-frame {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(172deg, #2e3b34 0%, #1c2720 32%, #101710 100%);
+            border-radius: 22px 22px 56px 56px;
+            padding: 18px 22px 0 22px;
+            box-shadow:
+                0 0 0 1px #07100d,
+                0 0 0 3px #36443c,
+                0 0 0 5px #111a15,
+                0 60px 140px rgba(0, 0, 0, 0.9),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                inset 0 2px 8px rgba(255, 255, 255, 0.02);
+        }
+
+        @media (pointer: coarse) {
+            #console-frame {
+                width: 100%;
+                height: 100dvh;
+                border-radius: 0;
+                padding: 10px 12px 0 12px;
+            }
+        }
+
+        /* ── Console header: speaker grilles + logo ── */
+        #console-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding-bottom: 14px;
+        }
+
+        .speaker-grille {
+            display: grid;
+            grid-template-columns: repeat(5, 5px);
+            grid-template-rows: repeat(2, 5px);
+            gap: 3px;
+        }
+
+        .speaker-grille span {
+            display: block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #111a15;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        #console-logo-text {
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: #cf9a3c;
+            text-shadow: 0 0 12px rgba(207, 154, 60, 0.4);
+            text-transform: uppercase;
+        }
+
+        /* ── Screen bezel ── */
+        #screen-bezel {
+            background: #060e0b;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow:
+                inset 0 4px 14px rgba(0, 0, 0, 0.98),
+                inset 0 0 0 1px rgba(0, 0, 0, 0.65),
+                0 0 0 1px #1c2820;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (pointer: coarse) {
+            #screen-bezel {
+                width: 100%;
+                flex: 1;
+                padding: 8px;
+                min-height: 0;
+            }
+        }
+
+        /* ── Virtual controls (hidden on desktop) ── */
+        #virtual-controls { display: none; }
+
+        @media (pointer: coarse) {
+            #virtual-controls {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                padding: 12px 20px;
+                min-height: 155px;
+                flex-shrink: 0;
+                touch-action: none;
+            }
+        }
+
+        /* ── D-pad ── */
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 52px);
+            grid-template-rows: repeat(3, 52px);
+            gap: 4px;
+        }
+
+        .dpad-btn {
+            background: rgba(63, 71, 66, 0.85);
+            border: 2px solid #5a645c;
+            border-radius: 8px;
+            color: #c8d4cc;
+            font-size: 20px;
+            cursor: pointer;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            padding: 0;
+        }
+
+        .dpad-btn:active, .dpad-btn.pressed {
+            background: rgba(207, 154, 60, 0.5);
+            border-color: #cf9a3c;
+        }
+
+        .dpad-center {
+            background: rgba(20, 28, 22, 0.7);
+            border-radius: 50%;
+        }
+
+        /* ── Action buttons ── */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: rgba(180, 40, 40, 0.85);
+            border: 2px solid #c04040;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .btn-start {
+            background: rgba(40, 80, 160, 0.85);
+            border-color: #4070c0;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            border-radius: 14px;
+            width: 68px;
+            height: 34px;
+        }
+
+        .action-btn:active { filter: brightness(1.4); }
+
+        /* ── Console footer strip ── */
+        #console-footer {
+            width: 100%;
+            height: 22px;
+            margin-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.035);
+            border-radius: 0 0 56px 56px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.35));
+            flex-shrink: 0;
+        }
+
+        @media (pointer: coarse) {
+            #console-footer {
+                height: 14px;
+                margin-top: 0;
+                border-radius: 0;
+            }
         }
     </style>
 </head>
 <body>
+    <div id="console-frame">
+        <div id="console-header">
+            <div class="speaker-grille">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <span id="console-logo-text">BoomZ!</span>
+            <div class="speaker-grille">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+        </div>
+        <div id="screen-bezel">
+            <!-- canvas injected here after kaboom() -->
+        </div>
+        <div id="virtual-controls">
+            <div class="dpad">
+                <div></div>
+                <button class="dpad-btn" id="btn-up">▲</button>
+                <div></div>
+                <button class="dpad-btn" id="btn-left">◀</button>
+                <div class="dpad-center"></div>
+                <button class="dpad-btn" id="btn-right">▶</button>
+                <div></div>
+                <button class="dpad-btn" id="btn-down">▼</button>
+                <div></div>
+            </div>
+            <div class="action-buttons">
+                <button class="action-btn" id="btn-x">X</button>
+                <button class="action-btn btn-start" id="btn-start">START</button>
+            </div>
+        </div>
+        <div id="console-footer"></div>
+    </div>
     <script type="module">
 import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
+
+// ── Mobile detection & scale ──
+const isMobile = ('ontouchstart' in window) || window.matchMedia('(pointer: coarse)').matches;
+const vKeys = { left: false, right: false, up: false, down: false };
+let virtualBombPressed = false;
+let virtualPausePressed = false;
+let gameScale = 2.5;
+if (isMobile) {
+    // vertical: frame-pad(10) + header(44) + header-pb(14) + bezel-pad(16) + controls(155) + footer(14)
+    const VERTICAL_OVERHEAD = 253;
+    // horizontal: frame-pad(24) + bezel-pad(16)
+    const HORIZONTAL_OVERHEAD = 40;
+    const scaleW = (window.innerWidth - HORIZONTAL_OVERHEAD) / 304;
+    const scaleH = (window.innerHeight - VERTICAL_OVERHEAD) / 280;
+    gameScale = Math.min(scaleW, scaleH, 2.5);
+}
 
 if (location.protocol === "file:") {
     document.body.innerHTML = `
@@ -49,10 +302,52 @@ if (location.protocol === "file:") {
 kaboom({
     width: 304,
     height: 280,
-    scale: 2.5,
+    scale: gameScale,
     crisp: true,
     background: [16, 20, 18],
 });
+
+// Move canvas into the screen bezel
+document.getElementById('screen-bezel').appendChild(document.querySelector('canvas'));
+
+// ── Virtual controls wiring (flags only — no synthetic keyboard events) ──
+{
+    const dpadDirs = [
+        { id: 'btn-up',    dir: 'up'    },
+        { id: 'btn-down',  dir: 'down'  },
+        { id: 'btn-left',  dir: 'left'  },
+        { id: 'btn-right', dir: 'right' },
+    ];
+    for (const { id, dir } of dpadDirs) {
+        const el = document.getElementById(id);
+        el.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            el.setPointerCapture(e.pointerId);
+            vKeys[dir] = true;
+        });
+        const release = () => { vKeys[dir] = false; };
+        el.addEventListener('pointerup',     release);
+        el.addEventListener('pointercancel', release);
+        el.addEventListener('pointerleave',  release);
+    }
+
+    // X = bomb (game) / confirm (menu) — both handled via virtualBombPressed flag
+    document.getElementById('btn-x').addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        virtualBombPressed = true;
+    });
+
+    // START = pause (game) / ignored on menu — handled via virtualPausePressed flag
+    document.getElementById('btn-start').addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        virtualPausePressed = true;
+    });
+
+    // Prevent page scroll while touching the controls
+    document.getElementById('virtual-controls').addEventListener('touchmove', (e) => {
+        e.preventDefault();
+    }, { passive: false });
+}
 
 const TILE_SIZE = 16;
 const MAP_WIDTH = 19;
@@ -477,6 +772,7 @@ scene("menu", () => {
     const options = [
         { label: "INICIAR OPERACAO", target: "game" },
         { label: "COMO JOGAR", target: "controls" },
+        { label: () => audioMuted ? "SOM: OFF" : "SOM: ON", isSoundToggle: true },
     ];
 
     let selected = 0;
@@ -490,8 +786,9 @@ scene("menu", () => {
             pos(width() / 2, y),
             anchor("center"),
         ]);
+        const labelText = typeof option.label === 'function' ? option.label() : option.label;
         const label = add([
-            text(option.label, { size: 14 }),
+            text(labelText, { size: 14 }),
             pos(width() / 2, y + 1),
             anchor("center"),
             color(index === selected ? 240 : 196, index === selected ? 244 : 173, index === selected ? 236 : 186),
@@ -516,6 +813,9 @@ scene("menu", () => {
         buttons.forEach((button, index) => {
             button.use(sprite(index === selected ? "menuButtonActive" : "menuButton"));
             labels[index].color = index === selected ? rgb(240, 244, 236) : rgb(196, 173, 186);
+            if (typeof options[index].label === 'function') {
+                labels[index].text = options[index].label();
+            }
         });
         leftBat.pos.y = 162 + selected * 40;
         rightBat.pos.y = 162 + selected * 40;
@@ -571,21 +871,41 @@ scene("menu", () => {
         }
     });
 
-    onKeyPress("up", () => {
+    function menuUp() {
         selected = (selected - 1 + options.length) % options.length;
         playSfx("uiMove");
         refreshMenu();
-    });
-
-    onKeyPress("down", () => {
+    }
+    function menuDown() {
         selected = (selected + 1) % options.length;
         playSfx("uiMove");
         refreshMenu();
-    });
-
-    onKeyPress("enter", () => {
+    }
+    function menuConfirm() {
+        const opt = options[selected];
+        if (opt.isSoundToggle) {
+            toggleMute();
+            refreshMenu();
+            return;
+        }
         playSfx("uiConfirm");
-        go(options[selected].target);
+        go(opt.target);
+    }
+
+    onKeyPress("up",    menuUp);
+    onKeyPress("down",  menuDown);
+    onKeyPress("enter", menuConfirm);
+
+    // Virtual controls: D-pad navigates, X confirms, START ignored
+    let vNavTimer = 0;
+    onUpdate(() => {
+        vNavTimer -= dt();
+        if (vNavTimer <= 0) {
+            if (vKeys.up)   { menuUp();   vNavTimer = 0.22; }
+            if (vKeys.down) { menuDown(); vNavTimer = 0.22; }
+        }
+        if (virtualBombPressed)  { virtualBombPressed  = false; menuConfirm(); }
+        if (virtualPausePressed) { virtualPausePressed = false; }
     });
 
     add([
@@ -595,21 +915,7 @@ scene("menu", () => {
         color(149, 160, 154),
     ]);
 
-    const menuAudioLabel = add([
-        text("", { size: 10 }),
-        pos(width() / 2, height() - 34),
-        anchor("center"),
-        color(218, 227, 221),
-    ]);
-    bindAudioLabel(
-        menuAudioLabel,
-        (muted) => muted ? "T SOM: OFF" : "T SOM: ON",
-        (label, muted) => {
-            label.color = muted ? rgb(196, 112, 96) : rgb(218, 227, 221);
-        },
-    );
-
-    onKeyPress("t", () => toggleMute());
+    onKeyPress("t", () => { toggleMute(); refreshMenu(); });
 });
 
 scene("controls", () => {
@@ -689,20 +995,6 @@ scene("controls", () => {
         color(153, 129, 145),
     ]);
 
-    const controlsAudioLabel = add([
-        text("", { size: 10 }),
-        pos(width() / 2, 224),
-        anchor("center"),
-        color(218, 227, 221),
-    ]);
-    bindAudioLabel(
-        controlsAudioLabel,
-        (muted) => muted ? "T SOM: OFF" : "T SOM: ON",
-        (label, muted) => {
-            label.color = muted ? rgb(196, 112, 96) : rgb(218, 227, 221);
-        },
-    );
-
     onKeyPress("enter", () => {
         playSfx("uiBack");
         go("menu");
@@ -722,6 +1014,11 @@ scene("game", () => {
 
     generateMap();
 
+    // Clear any lingering virtual button flags from menu/previous scene
+    virtualBombPressed  = false;
+    virtualPausePressed = false;
+    Object.keys(vKeys).forEach((k) => { vKeys[k] = false; });
+
     let lives = START_LIVES;
     let maxBombs = START_BOMBS;
     let firePower = START_FIRE;
@@ -738,11 +1035,13 @@ scene("game", () => {
     let resultButtons = [];
     let resultLabels = [];
     let resultOptions = [];
+    let vNavTimer = 0;
 
     const pauseOptions = [
         { label: "Voltar para a rua", action: () => closePause() },
         { label: "Recomecar varredura", action: () => go("game") },
         { label: "Tela inicial", action: () => go("menu") },
+        { label: () => audioMuted ? "Som: OFF" : "Som: ON", action: () => { toggleMute(); refreshPauseMenu(); } },
     ];
 
     add([sprite("gameBackdrop"), pos(0, 0)]);
@@ -843,20 +1142,6 @@ scene("game", () => {
         fixed(),
         z(101),
     ]);
-    const hudAudioLabel = add([
-        text("", { size: 7 }),
-        pos(width() - 8, 24),
-        anchor("right"),
-        fixed(),
-        z(101),
-    ]);
-    bindAudioLabel(
-        hudAudioLabel,
-        (muted) => muted ? "T SOM: OFF" : "T SOM: ON",
-        (label, muted) => {
-            label.color = muted ? rgb(196, 112, 96) : rgb(182, 194, 188);
-        },
-    );
 
     const player = add([
         sprite("player"),
@@ -1275,7 +1560,37 @@ scene("game", () => {
     }
 
     onUpdate(() => {
-        if (isPaused || runEnded) return;
+        if (virtualPausePressed) { virtualPausePressed = false; togglePause(); }
+
+        vNavTimer -= dt();
+
+        if (isPaused) {
+            if (vNavTimer <= 0) {
+                if (vKeys.up) {
+                    pauseSelection = (pauseSelection - 1 + pauseOptions.length) % pauseOptions.length;
+                    playSfx("uiMove"); refreshPauseMenu(); vNavTimer = 0.22;
+                } else if (vKeys.down) {
+                    pauseSelection = (pauseSelection + 1) % pauseOptions.length;
+                    playSfx("uiMove"); refreshPauseMenu(); vNavTimer = 0.22;
+                }
+            }
+            if (virtualBombPressed) { virtualBombPressed = false; runPauseSelection(); }
+            return;
+        }
+
+        if (runEnded) {
+            if (resultOptions.length > 0 && vNavTimer <= 0) {
+                if (vKeys.up) {
+                    resultSelection = (resultSelection - 1 + resultOptions.length) % resultOptions.length;
+                    playSfx("uiMove"); refreshResultMenu(); vNavTimer = 0.22;
+                } else if (vKeys.down) {
+                    resultSelection = (resultSelection + 1) % resultOptions.length;
+                    playSfx("uiMove"); refreshResultMenu(); vNavTimer = 0.22;
+                }
+            }
+            if (virtualBombPressed && resultOptions.length > 0) { virtualBombPressed = false; runResultSelection(); }
+            return;
+        }
 
         if (player.passThroughBomb) {
             if (!player.passThroughBomb.exists()) {
@@ -1291,10 +1606,10 @@ scene("game", () => {
         let dirX = 0;
         let dirY = 0;
 
-        if (isKeyDown("left") || isKeyDown("a")) dirX = -1;
-        else if (isKeyDown("right") || isKeyDown("d")) dirX = 1;
-        else if (isKeyDown("up") || isKeyDown("w")) dirY = -1;
-        else if (isKeyDown("down") || isKeyDown("s")) dirY = 1;
+        if      (isKeyDown("left")  || isKeyDown("a") || vKeys.left)  dirX = -1;
+        else if (isKeyDown("right") || isKeyDown("d") || vKeys.right) dirX =  1;
+        else if (isKeyDown("up")    || isKeyDown("w") || vKeys.up)    dirY = -1;
+        else if (isKeyDown("down")  || isKeyDown("s") || vKeys.down)  dirY =  1;
 
         let isMoving = false;
 
@@ -1317,6 +1632,8 @@ scene("game", () => {
         }
 
         updateActorVisual(player, isMoving);
+
+        if (virtualBombPressed) { virtualBombPressed = false; placeBomb(); }
     });
 
     const spawnCandidates = [
@@ -1515,6 +1832,9 @@ scene("game", () => {
             pauseLabels[index].color = index === pauseSelection
                 ? rgb(240, 244, 236)
                 : rgb(196, 173, 186);
+            if (typeof pauseOptions[index].label === 'function') {
+                pauseLabels[index].text = pauseOptions[index].label();
+            }
         });
     }
 
@@ -1570,7 +1890,7 @@ scene("game", () => {
 
         pauseSelection = 0;
         pauseOptions.forEach((option, index) => {
-            const y = height() / 2 - 18 + index * 32;
+            const y = height() / 2 - 34 + index * 32;
             const button = add([
                 sprite(index === 0 ? "menuButtonActive" : "menuButton"),
                 pos(width() / 2, y),
@@ -1579,8 +1899,9 @@ scene("game", () => {
                 z(132),
                 "pauseUI",
             ]);
+            const labelText = typeof option.label === 'function' ? option.label() : option.label;
             const label = add([
-                text(option.label, { size: 12 }),
+                text(labelText, { size: 12 }),
                 pos(width() / 2, y + 1),
                 anchor("center"),
                 color(index === 0 ? 240 : 196, index === 0 ? 244 : 173, index === 0 ? 236 : 186),
@@ -1591,16 +1912,6 @@ scene("game", () => {
             pauseButtons.push(button);
             pauseLabels.push(label);
         });
-
-        add([
-            text("SETAS + ENTER", { size: 10 }),
-            pos(width() / 2, height() / 2 + 68),
-            anchor("center"),
-            color(145, 158, 151),
-            fixed(),
-            z(132),
-            "pauseUI",
-        ]);
 
         refreshPauseMenu();
     }
