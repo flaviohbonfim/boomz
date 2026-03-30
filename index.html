@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bombervania</title>
+    <title>Explode The Zombies</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -12,16 +12,16 @@
             align-items: center;
             justify-content: center;
             background:
-                radial-gradient(circle at top, #41203f 0%, #140813 50%, #060405 100%);
-            font-family: Georgia, serif;
+                radial-gradient(circle at top, #5a645c 0%, #252c28 48%, #101412 100%);
+            font-family: "Trebuchet MS", "Arial Narrow", sans-serif;
         }
 
         canvas {
-            border: 4px solid #4e274b;
+            border: 4px solid #3f4742;
             box-shadow:
-                0 0 0 4px rgba(18, 7, 18, 0.95),
+                0 0 0 4px rgba(11, 15, 13, 0.96),
                 0 24px 60px rgba(0, 0, 0, 0.65),
-                0 0 40px rgba(139, 42, 87, 0.35);
+                0 0 40px rgba(207, 154, 60, 0.24);
             image-rendering: pixelated;
         }
     </style>
@@ -32,30 +32,30 @@ import kaboom from "https://unpkg.com/kaboom@3000.1.17/dist/kaboom.mjs";
 
 if (location.protocol === "file:") {
     document.body.innerHTML = `
-        <main style="max-width:720px;padding:32px 28px;border:4px solid #4e274b;box-shadow:0 24px 60px rgba(0,0,0,.65),0 0 40px rgba(139,42,87,.35);background:linear-gradient(180deg,#1f0d1a 0%,#120811 100%);color:#f0d59c;line-height:1.5;">
-            <h1 style="font-size:32px;margin-bottom:12px;">Bombervania</h1>
-            <p style="margin-bottom:12px;color:#d9c7cf;">Agora os sprites estao em arquivos separados dentro de <code>assets/</code>. Navegadores bloqueiam esse carregamento quando o jogo e aberto por <code>file://</code>.</p>
-            <p style="margin-bottom:12px;color:#d9c7cf;">Para rodar corretamente:</p>
+        <main style="max-width:720px;padding:32px 28px;border:4px solid #3f4742;box-shadow:0 24px 60px rgba(0,0,0,.65),0 0 40px rgba(207,154,60,.18);background:linear-gradient(180deg,#232a26 0%,#141816 100%);color:#f0d59c;line-height:1.5;">
+            <h1 style="font-size:32px;margin-bottom:12px;">Explode The Zombies</h1>
+            <p style="margin-bottom:12px;color:#c9d0cb;">Agora os sprites estao em arquivos separados dentro de <code>assets/</code>. Navegadores bloqueiam esse carregamento quando o jogo e aberto por <code>file://</code>.</p>
+            <p style="margin-bottom:12px;color:#c9d0cb;">Para rodar corretamente:</p>
             <ol style="padding-left:22px;margin-bottom:14px;color:#f0d59c;">
                 <li>Execute <code>start-local-server.bat</code></li>
                 <li>Abra <code>http://localhost:8080</code></li>
             </ol>
-            <p style="color:#bfa7b7;">Se preferir, voce tambem pode usar qualquer servidor HTTP local.</p>
+            <p style="color:#95a19a;">Se preferir, voce tambem pode usar qualquer servidor HTTP local.</p>
         </main>
     `;
     await new Promise(() => {});
 }
 
 kaboom({
-    width: 320,
+    width: 304,
     height: 280,
     scale: 2.5,
     crisp: true,
-    background: [8, 5, 10],
+    background: [16, 20, 18],
 });
 
 const TILE_SIZE = 16;
-const MAP_WIDTH = 20;
+const MAP_WIDTH = 19;
 const MAP_HEIGHT = 15;
 const HUD_HEIGHT = 40;
 const MAP_OFFSET_Y = HUD_HEIGHT;
@@ -63,10 +63,13 @@ const START_LIVES = 3;
 const START_BOMBS = 1;
 const START_FIRE = 2;
 const ACTOR_VISUAL_OFFSET = vec2(0, -6);
-const PLAYER_SHEET_PATH = "assets/characters/player-sheet-placeholder.svg";
-const ZOMBIE_SHEET_PATH = "assets/characters/zombie-sheet-placeholder.svg";
-const BOMB_SHEET_PATH = "assets/items/bomb-sheet-placeholder.svg";
-const EXPLOSION_SHEET_PATH = "assets/items/explosion-sheet-placeholder.svg";
+const PLAYER_SHEET_PATH = "assets/characters/player-sheet-refined-v2.svg";
+const ZOMBIE_SHEET_PATH = "assets/characters/zombie-sheet-refined-v2.svg";
+const BOMB_SHEET_PATH = "assets/items/bomb-sheet-refined-v2.svg";
+const EXPLOSION_SHEET_PATH = "assets/items/explosion-sheet-refined-v2.svg";
+const GAME_TITLE = "EXPLODE THE ZOMBIES";
+const GAME_KICKER = "OUTBREAK RESPONSE";
+const GAME_TAGLINE = "Varra as ruas, exploda barricadas e limpe a horda.";
 
 const SOLID = 1;
 const DESTRUCTIBLE = 2;
@@ -125,17 +128,21 @@ function inBounds(gx, gy) {
     return gx >= 0 && gx < MAP_WIDTH && gy >= 0 && gy < MAP_HEIGHT;
 }
 
+function isEdgeCorridor(gx, gy) {
+    return gx === 1 || gy === 1 || gx === MAP_WIDTH - 2 || gy === MAP_HEIGHT - 2;
+}
+
 function actorDepth(posY) {
     return 20 + (posY - MAP_OFFSET_Y) / TILE_SIZE;
 }
 
 await Promise.all([
     loadSpriteAtlas("assets/backgrounds/backdrops.svg", {
-        menuBackdrop: { x: 0, y: 0, width: 320, height: 280 },
-        gameBackdrop: { x: 320, y: 0, width: 320, height: 280 },
+        menuBackdrop: { x: 0, y: 0, width: 304, height: 280 },
+        gameBackdrop: { x: 320, y: 0, width: 304, height: 280 },
     }),
     loadSpriteAtlas("assets/ui/panels.svg", {
-        hudPanel: { x: 0, y: 0, width: 320, height: 40 },
+        hudPanel: { x: 0, y: 0, width: 304, height: 40 },
         menuPlaque: { x: 0, y: 40, width: 220, height: 70 },
         menuButton: { x: 0, y: 110, width: 154, height: 28 },
         menuButtonActive: { x: 0, y: 138, width: 154, height: 28 },
@@ -191,6 +198,8 @@ function generateMap() {
         for (let x = 0; x < MAP_WIDTH; x++) {
             if (x === 0 || y === 0 || x === MAP_WIDTH - 1 || y === MAP_HEIGHT - 1) {
                 gameMap[y][x] = SOLID;
+            } else if (isEdgeCorridor(x, y)) {
+                gameMap[y][x] = EMPTY;
             } else if (x % 2 === 0 && y % 2 === 0) {
                 gameMap[y][x] = SOLID;
             } else {
@@ -202,7 +211,12 @@ function generateMap() {
     const safeZone = new Set(["1,1", "2,1", "1,2", "3,1", "1,3", "2,2"]);
     for (let y = 1; y < MAP_HEIGHT - 1; y++) {
         for (let x = 1; x < MAP_WIDTH - 1; x++) {
-            if (gameMap[y][x] === EMPTY && !safeZone.has(`${x},${y}`) && Math.random() < 0.2) {
+            if (
+                gameMap[y][x] === EMPTY
+                && !safeZone.has(`${x},${y}`)
+                && !isEdgeCorridor(x, y)
+                && Math.random() < 0.24
+            ) {
                 gameMap[y][x] = DESTRUCTIBLE;
             }
         }
@@ -223,29 +237,36 @@ scene("menu", () => {
     ]);
 
     add([
-        text("BOMBERVANIA", { size: 26 }),
-        pos(width() / 2, 46),
+        text(GAME_KICKER, { size: 10 }),
+        pos(width() / 2, 23),
         anchor("center"),
-        color(232, 200, 123),
+        color(218, 170, 74),
     ]);
 
     add([
-        text("Castelo Maldito", { size: 12 }),
-        pos(width() / 2, 67),
+        text("EXPLODE THE", { size: 22 }),
+        pos(width() / 2, 44),
         anchor("center"),
-        color(182, 116, 150),
+        color(241, 220, 171),
     ]);
 
     add([
-        text("Cace os mortos, abra caminho e sobreviva.", { size: 10 }),
+        text("ZOMBIES", { size: 22 }),
+        pos(width() / 2, 65),
+        anchor("center"),
+        color(230, 111, 69),
+    ]);
+
+    add([
+        text(GAME_TAGLINE, { size: 10 }),
         pos(width() / 2, 112),
         anchor("center"),
-        color(185, 173, 180),
+        color(191, 200, 194),
     ]);
 
     const options = [
-        { label: "INICIAR JOGO", target: "game" },
-        { label: "CONTROLES", target: "controls" },
+        { label: "INICIAR OPERACAO", target: "game" },
+        { label: "COMO JOGAR", target: "controls" },
     ];
 
     let selected = 0;
@@ -263,7 +284,7 @@ scene("menu", () => {
             text(option.label, { size: 14 }),
             pos(width() / 2, y + 1),
             anchor("center"),
-            color(index === selected ? 255 : 196, index === selected ? 222 : 173, index === selected ? 150 : 186),
+            color(index === selected ? 240 : 196, index === selected ? 244 : 173, index === selected ? 236 : 186),
         ]);
         buttons.push(button);
         labels.push(label);
@@ -281,10 +302,29 @@ scene("menu", () => {
         scale(vec2(-1, 1)),
     ]);
 
+    const heroShowcase = add([
+        sprite("playerAnim", { anim: "idle-side" }),
+        pos(76, 128),
+        anchor("center"),
+        scale(1.08),
+    ]);
+    const zombieShowcase = add([
+        sprite("zombieAnim", { anim: "idle-side", flipX: true }),
+        pos(width() - 76, 130),
+        anchor("center"),
+        scale(1.08),
+    ]);
+    const bombShowcase = add([
+        sprite("bombAnim", { anim: "fuse" }),
+        pos(width() / 2, 148),
+        anchor("center"),
+        scale(1.12),
+    ]);
+
     function refreshMenu() {
         buttons.forEach((button, index) => {
             button.use(sprite(index === selected ? "menuButtonActive" : "menuButton"));
-            labels[index].color = index === selected ? rgb(255, 225, 150) : rgb(196, 173, 186);
+            labels[index].color = index === selected ? rgb(240, 244, 236) : rgb(196, 173, 186);
         });
         leftBat.pos.y = 162 + selected * 40;
         rightBat.pos.y = 162 + selected * 40;
@@ -294,6 +334,9 @@ scene("menu", () => {
         const pulse = 1 + Math.sin(time() * 8) * 0.08;
         leftBat.scale = vec2(pulse, pulse);
         rightBat.scale = vec2(-pulse, pulse);
+        heroShowcase.pos.y = 128 + Math.sin(time() * 2.8) * 2;
+        zombieShowcase.pos.y = 130 + Math.sin(time() * 2.8 + 0.9) * 2;
+        bombShowcase.pos.y = 148 + Math.sin(time() * 4.2) * 1.5;
     });
 
     onKeyPress("up", () => {
@@ -314,7 +357,7 @@ scene("menu", () => {
         text("Use as setas para navegar e ENTER para escolher", { size: 10 }),
         pos(width() / 2, height() - 18),
         anchor("center"),
-        color(153, 129, 145),
+        color(149, 160, 154),
     ]);
 });
 
@@ -327,16 +370,16 @@ scene("controls", () => {
     ]);
 
     add([
-        text("CONTROLES", { size: 24 }),
+        text("COMO JOGAR", { size: 22 }),
         pos(width() / 2, 54),
         anchor("center"),
-        color(235, 203, 127),
+        color(241, 208, 126),
     ]);
 
     const rows = [
-        { icon: "player", key: "SETAS / WASD", action: "Mover o cacador" },
-        { icon: "bomb", key: "SPACE / Z / X", action: "Soltar bomba" },
-        { icon: "pausePanel", key: "ESC / P", action: "Pausar partida" },
+        { icon: "playerAnim", iconOptions: { frame: 18 }, key: "SETAS / WASD", action: "Mover o sobrevivente" },
+        { icon: "bombAnim", iconOptions: { frame: 0 }, key: "SPACE / Z / X", action: "Armar bomba" },
+        { icon: "pausePanel", key: "ESC / P", action: "Pausar operacao" },
     ];
 
     rows.forEach((row, index) => {
@@ -346,7 +389,7 @@ scene("controls", () => {
                 rect(14, 14),
                 pos(48, y),
                 anchor("center"),
-                color(121, 71, 104),
+                color(71, 82, 77),
             ]);
             add([
                 rect(4, 10),
@@ -362,10 +405,10 @@ scene("controls", () => {
             ]);
         } else {
             add([
-                sprite(row.icon),
+                sprite(row.icon, row.iconOptions || {}),
                 pos(48, y),
                 anchor("center"),
-                scale(1.2),
+                scale(row.icon === "bombAnim" ? 1.05 : 1),
             ]);
         }
 
@@ -379,7 +422,7 @@ scene("controls", () => {
             text(row.action, { size: 11 }),
             pos(72, y + 8),
             anchor("left"),
-            color(191, 176, 190),
+            color(184, 192, 188),
         ]);
     });
 
@@ -415,9 +458,9 @@ scene("game", () => {
     let resultOptions = [];
 
     const pauseOptions = [
-        { label: "Voltar ao jogo", action: () => closePause() },
-        { label: "Reiniciar fase", action: () => go("game") },
-        { label: "Menu inicial", action: () => go("menu") },
+        { label: "Voltar para a rua", action: () => closePause() },
+        { label: "Recomecar varredura", action: () => go("game") },
+        { label: "Tela inicial", action: () => go("menu") },
     ];
 
     add([sprite("gameBackdrop"), pos(0, 0)]);
@@ -456,10 +499,10 @@ scene("game", () => {
     }
 
     add([
-        text("BOMBERVANIA", { size: 12 }),
+        text(GAME_TITLE, { size: 8 }),
         pos(width() / 2, 8),
         anchor("center"),
-        color(233, 203, 127),
+        color(241, 212, 133),
         fixed(),
         z(101),
     ]);
@@ -522,7 +565,7 @@ scene("game", () => {
         text("PAUSA", { size: 10 }),
         pos(width() - 10, 25),
         anchor("right"),
-        color(133, 111, 128),
+        color(145, 158, 151),
         fixed(),
         z(101),
     ]);
@@ -649,7 +692,7 @@ scene("game", () => {
         resultButtons.forEach((button, index) => {
             button.use(sprite(index === resultSelection ? "menuButtonActive" : "menuButton"));
             resultLabels[index].color = index === resultSelection
-                ? rgb(255, 225, 150)
+                ? rgb(240, 244, 236)
                 : rgb(196, 173, 186);
         });
     }
@@ -667,8 +710,8 @@ scene("game", () => {
         clearResultUI();
 
         resultOptions = [
-            { label: "Jogar novamente", action: () => go("game") },
-            { label: "Menu inicial", action: () => go("menu") },
+            { label: "Tentar de novo", action: () => go("game") },
+            { label: "Tela inicial", action: () => go("menu") },
         ];
 
         const panelY = height() / 2 + (statLines.length > 0 ? 10 : 0);
@@ -736,7 +779,7 @@ scene("game", () => {
                 text(option.label, { size: 12 }),
                 pos(width() / 2, y + 1),
                 anchor("center"),
-                color(index === 0 ? 255 : 196, index === 0 ? 225 : 173, index === 0 ? 150 : 186),
+                color(index === 0 ? 240 : 196, index === 0 ? 244 : 173, index === 0 ? 236 : 186),
                 fixed(),
                 z(152),
                 "resultUI",
@@ -756,6 +799,11 @@ scene("game", () => {
         if (!inBounds(gx, gy)) return true;
         if (gameMap[gy][gx] === SOLID || gameMap[gy][gx] === DESTRUCTIBLE) return true;
         return Boolean(tileHasBomb(gx, gy));
+    }
+
+    function entityOccupiesTile(entity, gx, gy) {
+        const entityGrid = gridFromPos(entity.pos);
+        return entityGrid.x === gx && entityGrid.y === gy;
     }
 
     function defeatZombie(zombie) {
@@ -782,11 +830,14 @@ scene("game", () => {
         ]);
 
         get("zombie").forEach((zombie) => {
-            const zombieGrid = gridFromPos(zombie.pos);
-            if (zombieGrid.x === gx && zombieGrid.y === gy && zombie.exists()) {
+            if (zombie.exists() && entityOccupiesTile(zombie, gx, gy)) {
                 defeatZombie(zombie);
             }
         });
+
+        if (player.exists() && entityOccupiesTile(player, gx, gy)) {
+            playerHit();
+        }
 
         checkWin();
 
@@ -1077,18 +1128,18 @@ scene("game", () => {
         if (powerup.powerType === POWER_BOMB) {
             maxBombs += 1;
             updateStats();
-            showToast("+ Bomba", [239, 215, 159]);
+            showToast("+ Carga", [239, 215, 159]);
         } else {
             firePower += 1;
             updateStats();
-            showToast("+ Fogo", [255, 168, 87]);
+            showToast("+ Alcance", [255, 168, 87]);
         }
         destroy(powerup);
     });
 
     function endRun(message, tint, restartDelay) {
         if (runEnded) return;
-        openResultScreen(message, tint, "Escolha o proximo passo", []);
+        openResultScreen(message, tint, "Escolha sua proxima acao", []);
     }
 
     function showVictorySummary() {
@@ -1096,10 +1147,10 @@ scene("game", () => {
 
         const lines = [
             `Tempo: ${formatBattleTime(Date.now() - battleStartedAt)}`,
-            `Vidas perdidas: ${START_LIVES - lives}`,
-            `Inimigos derrotados: ${enemiesDefeated}/${totalEnemies}`,
+            `Ferimentos: ${START_LIVES - lives}`,
+            `Zumbis eliminados: ${enemiesDefeated}/${totalEnemies}`,
         ];
-        openResultScreen("VOCE VENCEU", [236, 208, 122], "Estatisticas da batalha", lines);
+        openResultScreen("AREA LIMPA", [236, 208, 122], "Resumo da varredura", lines);
     }
 
     function playerHit() {
@@ -1109,13 +1160,13 @@ scene("game", () => {
         updateHearts();
 
         if (lives <= 0) {
-            endRun("GAME OVER", [219, 76, 98], 2);
+            endRun("OPERACAO FALHOU", [219, 76, 98], 2);
             return;
         }
 
         isInvincible = true;
         setActorHidden(player, true);
-        showToast("Vida perdida", [219, 76, 98]);
+        showToast("Mordida!", [219, 76, 98]);
 
         wait(0.7, () => {
             respawnPlayer();
@@ -1142,12 +1193,6 @@ scene("game", () => {
     }
 
     player.onCollide("zombie", () => playerHit());
-    player.onCollide("explosion", () => playerHit());
-
-    onCollide("explosion", "zombie", (_exp, zombie) => {
-        defeatZombie(zombie);
-        checkWin();
-    });
 
     function clearPauseUI() {
         clearTag("pauseUI");
@@ -1159,7 +1204,7 @@ scene("game", () => {
         pauseButtons.forEach((button, index) => {
             button.use(sprite(index === pauseSelection ? "menuButtonActive" : "menuButton"));
             pauseLabels[index].color = index === pauseSelection
-                ? rgb(255, 225, 150)
+                ? rgb(240, 244, 236)
                 : rgb(196, 173, 186);
         });
     }
@@ -1195,7 +1240,7 @@ scene("game", () => {
             "pauseUI",
         ]);
         add([
-            text("PAUSADO", { size: 24 }),
+            text("OPERACAO PAUSADA", { size: 18 }),
             pos(width() / 2, height() / 2 - 56),
             anchor("center"),
             color(236, 208, 122),
@@ -1204,10 +1249,10 @@ scene("game", () => {
             "pauseUI",
         ]);
         add([
-            text("Escolha uma opcao", { size: 10 }),
+            text("Escolha sua proxima acao", { size: 10 }),
             pos(width() / 2, height() / 2 - 38),
             anchor("center"),
-            color(196, 173, 186),
+            color(182, 194, 188),
             fixed(),
             z(132),
             "pauseUI",
@@ -1228,7 +1273,7 @@ scene("game", () => {
                 text(option.label, { size: 12 }),
                 pos(width() / 2, y + 1),
                 anchor("center"),
-                color(index === 0 ? 255 : 196, index === 0 ? 225 : 173, index === 0 ? 150 : 186),
+                color(index === 0 ? 240 : 196, index === 0 ? 244 : 173, index === 0 ? 236 : 186),
                 fixed(),
                 z(133),
                 "pauseUI",
@@ -1241,7 +1286,7 @@ scene("game", () => {
             text("SETAS + ENTER", { size: 10 }),
             pos(width() / 2, height() / 2 + 68),
             anchor("center"),
-            color(153, 129, 145),
+            color(145, 158, 151),
             fixed(),
             z(132),
             "pauseUI",

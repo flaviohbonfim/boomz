@@ -1,31 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="38" height="10" viewBox="0 0 38 10" shape-rendering="crispEdges">
-  <g transform="translate(0 0)" fill="#d93a5d">
-    <rect x="2" y="0" width="2" height="2"/>
-    <rect x="6" y="0" width="2" height="2"/>
-    <rect x="1" y="1" width="8" height="3"/>
-    <rect x="2" y="4" width="6" height="2"/>
-    <rect x="3" y="6" width="4" height="1"/>
-    <rect x="4" y="7" width="2" height="1"/>
+  <g transform="translate(0 0)">
+    <rect x="1" y="1" width="8" height="7" fill="#8b1f1f"/>
+    <rect x="2" y="2" width="6" height="5" fill="#d93d39"/>
+    <rect x="3" y="0" width="4" height="2" fill="#7f8f88"/>
+    <rect x="4" y="3" width="2" height="3" fill="#f6f0d2"/>
+    <rect x="3" y="4" width="4" height="1" fill="#f6f0d2"/>
   </g>
 
-  <g transform="translate(10 0)" fill="#5a3045">
-    <rect x="2" y="0" width="2" height="2"/>
-    <rect x="6" y="0" width="2" height="2"/>
-    <rect x="1" y="1" width="8" height="1"/>
-    <rect x="1" y="2" width="1" height="2"/>
-    <rect x="8" y="2" width="1" height="2"/>
-    <rect x="2" y="4" width="1" height="2"/>
-    <rect x="7" y="4" width="1" height="2"/>
-    <rect x="3" y="6" width="1" height="1"/>
-    <rect x="6" y="6" width="1" height="1"/>
-    <rect x="4" y="7" width="2" height="1"/>
+  <g transform="translate(10 0)">
+    <rect x="1" y="1" width="8" height="7" fill="#303633"/>
+    <rect x="2" y="2" width="6" height="5" fill="#59635e"/>
+    <rect x="3" y="0" width="4" height="2" fill="#7f8f88"/>
+    <rect x="4" y="3" width="2" height="3" fill="#c8d0cb" fill-opacity="0.5"/>
+    <rect x="3" y="4" width="4" height="1" fill="#c8d0cb" fill-opacity="0.5"/>
   </g>
 
-  <g transform="translate(20 0)" fill="#e2be73">
-    <rect x="8" y="3" width="2" height="4"/>
-    <rect x="3" y="4" width="5" height="2"/>
-    <rect x="10" y="4" width="5" height="2"/>
-    <rect x="1" y="5" width="3" height="2"/>
-    <rect x="14" y="5" width="3" height="2"/>
+  <g transform="translate(20 0)" fill="#f0be5a">
+    <rect x="0" y="3" width="6" height="2"/>
+    <rect x="2" y="1" width="4" height="2"/>
+    <rect x="10" y="3" width="6" height="2"/>
+    <rect x="10" y="5" width="4" height="2"/>
+    <rect x="4" y="3" width="3" height="2"/>
+    <rect x="9" y="3" width="3" height="2"/>
   </g>
 </svg>
