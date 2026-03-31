@@ -1,0 +1,514 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1264" height="280" viewBox="0 0 1264 280" shape-rendering="crispEdges">
+  <defs>
+    <!-- Hospital gradients -->
+    <linearGradient id="hospSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c8d4cc"/>
+      <stop offset="50%" stop-color="#9bb0a2"/>
+      <stop offset="100%" stop-color="#687d72"/>
+    </linearGradient>
+    <!-- Shopping gradients -->
+    <linearGradient id="shopSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0614"/>
+      <stop offset="55%" stop-color="#100920"/>
+      <stop offset="100%" stop-color="#180a28"/>
+    </linearGradient>
+    <!-- Lab gradients -->
+    <linearGradient id="labSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050d1a"/>
+      <stop offset="50%" stop-color="#071222"/>
+      <stop offset="100%" stop-color="#091828"/>
+    </linearGradient>
+    <!-- Bunker gradients -->
+    <linearGradient id="bunkSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0e0e0c"/>
+      <stop offset="50%" stop-color="#111110"/>
+      <stop offset="100%" stop-color="#0a0a09"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ════════════════════════════════════════════════════
+       FASE 2 — HOSPITAL  (x=0)
+  ════════════════════════════════════════════════════ -->
+  <g transform="translate(0 0)">
+    <!-- Sky / exterior -->
+    <rect width="304" height="280" fill="url(#hospSky)"/>
+    <rect y="200" width="304" height="80" fill="#4a5e54"/>
+    <rect y="216" width="304" height="64" fill="#3e5048"/>
+    <rect y="252" width="304" height="4" fill="#d6d0b0" fill-opacity="0.18"/>
+
+    <!-- Building silhouettes: hospital blocks -->
+    <g fill="#2a3a32">
+      <rect x="0"   y="80"  width="52"  height="140"/>
+      <rect x="56"  y="60"  width="80"  height="160"/>
+      <rect x="140" y="72"  width="60"  height="148"/>
+      <rect x="204" y="50"  width="100" height="170"/>
+    </g>
+
+    <!-- Hospital cross on main building -->
+    <g fill="#4fc870" fill-opacity="0.72">
+      <rect x="174" y="76"  width="8" height="24"/>
+      <rect x="167" y="83"  width="22" height="8"/>
+    </g>
+    <g fill="#4fc870" fill-opacity="0.42">
+      <rect x="74"  y="85"  width="6" height="18"/>
+      <rect x="68"  y="91"  width="18" height="6"/>
+    </g>
+
+    <!-- Illuminated windows -->
+    <g fill="#b8e4c0" fill-opacity="0.70">
+      <rect x="62"  y="72"  width="10" height="8"/>
+      <rect x="78"  y="72"  width="10" height="8"/>
+      <rect x="94"  y="72"  width="10" height="8"/>
+      <rect x="110" y="72"  width="10" height="8"/>
+      <rect x="62"  y="88"  width="10" height="8"/>
+      <rect x="94"  y="88"  width="10" height="8"/>
+      <rect x="214" y="60"  width="10" height="8"/>
+      <rect x="230" y="60"  width="10" height="8"/>
+      <rect x="246" y="60"  width="10" height="8"/>
+      <rect x="214" y="76"  width="10" height="8"/>
+      <rect x="246" y="76"  width="10" height="8"/>
+    </g>
+
+    <!-- Dark windows -->
+    <g fill="#1a2e24" fill-opacity="0.80">
+      <rect x="78"  y="88"  width="10" height="8"/>
+      <rect x="110" y="88"  width="10" height="8"/>
+      <rect x="148" y="82"  width="10" height="8"/>
+      <rect x="162" y="82"  width="10" height="8"/>
+      <rect x="230" y="76"  width="10" height="8"/>
+    </g>
+
+    <!-- Ambulance light glow at bottom -->
+    <rect x="0" y="210" width="304" height="40" fill="#1e3228"/>
+    <g fill="#0e1e16">
+      <rect x="0" y="218" width="304" height="62"/>
+    </g>
+
+    <!-- Ambulance silhouette -->
+    <g fill="#162a20">
+      <rect x="18"  y="222" width="64" height="28"/>
+      <rect x="18"  y="214" width="42" height="10"/>
+    </g>
+    <g fill="#cc4040" fill-opacity="0.60">
+      <rect x="22" y="216" width="10" height="6"/>
+      <rect x="44" y="216" width="10" height="6"/>
+    </g>
+    <g fill="#8fc8a0" fill-opacity="0.35">
+      <rect x="36" y="223" width="22" height="14"/>
+    </g>
+    <!-- Ambulance wheels -->
+    <g fill="#0a1410">
+      <rect x="22" y="248" width="14" height="8"/>
+      <rect x="58" y="248" width="14" height="8"/>
+    </g>
+
+    <!-- Ground markings -->
+    <g fill="#2e4438" fill-opacity="0.40">
+      <rect x="0"   y="256" width="304" height="2"/>
+      <rect x="120" y="240" width="8"   height="24"/>
+      <rect x="140" y="240" width="8"   height="24"/>
+      <rect x="160" y="240" width="8"   height="24"/>
+    </g>
+
+    <!-- Clinical overhead light effect -->
+    <rect x="90" y="0" width="124" height="3" fill="#e0eee6" fill-opacity="0.20"/>
+  </g>
+
+  <!-- ════════════════════════════════════════════════════
+       FASE 3 — SHOPPING / MALL  (x=320)
+  ════════════════════════════════════════════════════ -->
+  <g transform="translate(320 0)">
+    <!-- Night sky -->
+    <rect width="304" height="280" fill="url(#shopSky)"/>
+    <rect y="190" width="304" height="90" fill="#09061a"/>
+    <rect y="220" width="304" height="60" fill="#0d0920"/>
+    <rect y="250" width="304" height="4" fill="#5540cc" fill-opacity="0.22"/>
+
+    <!-- Stars -->
+    <g fill="#ffffff" fill-opacity="0.55">
+      <rect x="18"  y="12" width="2" height="2"/>
+      <rect x="54"  y="28" width="2" height="2"/>
+      <rect x="88"  y="8"  width="2" height="2"/>
+      <rect x="130" y="20" width="2" height="2"/>
+      <rect x="178" y="6"  width="2" height="2"/>
+      <rect x="212" y="36" width="2" height="2"/>
+      <rect x="252" y="14" width="2" height="2"/>
+      <rect x="282" y="24" width="2" height="2"/>
+    </g>
+
+    <!-- Building silhouettes -->
+    <g fill="#06041a">
+      <rect x="0"   y="100" width="60"  height="120"/>
+      <rect x="64"  y="70"  width="90"  height="150"/>
+      <rect x="158" y="80"  width="50"  height="140"/>
+      <rect x="212" y="60"  width="92"  height="160"/>
+    </g>
+
+    <!-- Neon signs -->
+    <!-- Pink neon "bar" sign -->
+    <g fill="#ff40a0" fill-opacity="0.85">
+      <rect x="70"  y="78"  width="30" height="4"/>
+      <rect x="70"  y="78"  width="4"  height="14"/>
+      <rect x="96"  y="78"  width="4"  height="14"/>
+    </g>
+    <!-- Cyan neon "shop" sign -->
+    <g fill="#00e8f0" fill-opacity="0.80">
+      <rect x="166" y="88"  width="28" height="4"/>
+      <rect x="166" y="88"  width="4"  height="12"/>
+      <rect x="190" y="88"  width="4"  height="12"/>
+      <rect x="166" y="96"  width="28" height="4"/>
+    </g>
+    <!-- Yellow neon outline -->
+    <g fill="#ffe040" fill-opacity="0.72">
+      <rect x="220" y="68"  width="36" height="4"/>
+      <rect x="220" y="68"  width="4"  height="16"/>
+      <rect x="252" y="68"  width="4"  height="16"/>
+      <rect x="220" y="80"  width="36" height="4"/>
+    </g>
+
+    <!-- Lit windows with neon colors -->
+    <g fill="#ff60c0" fill-opacity="0.55">
+      <rect x="70"  y="96"  width="10" height="8"/>
+      <rect x="86"  y="96"  width="10" height="8"/>
+      <rect x="118" y="96"  width="10" height="8"/>
+    </g>
+    <g fill="#40e0f0" fill-opacity="0.55">
+      <rect x="168" y="100" width="10" height="8"/>
+      <rect x="182" y="100" width="10" height="8"/>
+      <rect x="220" y="88"  width="10" height="8"/>
+    </g>
+    <g fill="#ffe060" fill-opacity="0.55">
+      <rect x="236" y="88"  width="10" height="8"/>
+      <rect x="252" y="88"  width="10" height="8"/>
+      <rect x="234" y="104" width="10" height="8"/>
+    </g>
+
+    <!-- Dark windows -->
+    <g fill="#08061c">
+      <rect x="102" y="96"  width="10" height="8"/>
+      <rect x="70"  y="112" width="10" height="8"/>
+      <rect x="196" y="100" width="10" height="8"/>
+    </g>
+
+    <!-- Ground / road -->
+    <rect x="0" y="212" width="304" height="68" fill="#06040e"/>
+    <g fill="#0e0c22">
+      <rect x="0" y="220" width="304" height="60"/>
+    </g>
+    <!-- Road lines -->
+    <g fill="#3a3060" fill-opacity="0.50">
+      <rect x="0"   y="244" width="304" height="2"/>
+      <rect x="60"  y="230" width="18"  height="6"/>
+      <rect x="100" y="230" width="18"  height="6"/>
+      <rect x="140" y="230" width="18"  height="6"/>
+      <rect x="180" y="230" width="18"  height="6"/>
+      <rect x="220" y="230" width="18"  height="6"/>
+    </g>
+    <!-- Neon puddle reflections on road -->
+    <rect x="50"  y="254" width="40" height="6" fill="#ff40a0" fill-opacity="0.12"/>
+    <rect x="140" y="254" width="40" height="6" fill="#00e8f0" fill-opacity="0.12"/>
+    <rect x="220" y="254" width="40" height="6" fill="#ffe040" fill-opacity="0.10"/>
+  </g>
+
+  <!-- ════════════════════════════════════════════════════
+       FASE 4 — LABORATORIO  (x=640)
+  ════════════════════════════════════════════════════ -->
+  <g transform="translate(640 0)">
+    <!-- Underground ceiling / deep dark sky -->
+    <rect width="304" height="280" fill="url(#labSky)"/>
+
+    <!-- Ceiling structure bars -->
+    <g fill="#0c1c2e" fill-opacity="0.90">
+      <rect x="0"   y="0"  width="304" height="22"/>
+      <rect x="0"   y="22" width="4"   height="240"/>
+      <rect x="300" y="22" width="4"   height="240"/>
+      <rect x="38"  y="22" width="4"   height="180"/>
+      <rect x="80"  y="22" width="4"   height="140"/>
+      <rect x="140" y="22" width="4"   height="200"/>
+      <rect x="200" y="22" width="4"   height="120"/>
+      <rect x="260" y="22" width="4"   height="160"/>
+    </g>
+
+    <!-- Horizontal struts -->
+    <g fill="#0c2040" fill-opacity="0.70">
+      <rect x="0" y="60"  width="304" height="4"/>
+      <rect x="0" y="120" width="304" height="4"/>
+      <rect x="0" y="180" width="304" height="4"/>
+    </g>
+
+    <!-- Lab module silhouettes -->
+    <g fill="#081426">
+      <rect x="8"   y="26"  width="26" height="190"/>
+      <rect x="44"  y="26"  width="32" height="150"/>
+      <rect x="84"  y="26"  width="52" height="170"/>
+      <rect x="144" y="26"  width="52" height="190"/>
+      <rect x="204" y="26"  width="36" height="130"/>
+      <rect x="264" y="26"  width="32" height="160"/>
+    </g>
+
+    <!-- Cyan status lights on modules -->
+    <g fill="#00d8f0" fill-opacity="0.80">
+      <rect x="16"  y="32"  width="6" height="4"/>
+      <rect x="16"  y="44"  width="6" height="4"/>
+      <rect x="16"  y="56"  width="6" height="4"/>
+      <rect x="52"  y="32"  width="6" height="4"/>
+      <rect x="68"  y="32"  width="6" height="4"/>
+      <rect x="92"  y="32"  width="8" height="6"/>
+      <rect x="106" y="32"  width="8" height="6"/>
+      <rect x="120" y="32"  width="8" height="6"/>
+      <rect x="152" y="32"  width="8" height="6"/>
+      <rect x="166" y="32"  width="8" height="6"/>
+      <rect x="180" y="32"  width="8" height="6"/>
+      <rect x="210" y="32"  width="6" height="4"/>
+      <rect x="226" y="32"  width="6" height="4"/>
+      <rect x="272" y="32"  width="6" height="4"/>
+      <rect x="272" y="46"  width="6" height="4"/>
+    </g>
+
+    <!-- Red warning lights -->
+    <g fill="#e03020" fill-opacity="0.70">
+      <rect x="28"  y="34"  width="4" height="4"/>
+      <rect x="60"  y="34"  width="4" height="4"/>
+      <rect x="100" y="34"  width="4" height="4"/>
+      <rect x="160" y="34"  width="4" height="4"/>
+      <rect x="216" y="34"  width="4" height="4"/>
+      <rect x="282" y="34"  width="4" height="4"/>
+    </g>
+
+    <!-- Glowing lab panels -->
+    <g fill="#004455" fill-opacity="0.55">
+      <rect x="48"  y="66"  width="24" height="44"/>
+      <rect x="88"  y="66"  width="44" height="30"/>
+      <rect x="148" y="66"  width="44" height="44"/>
+      <rect x="208" y="66"  width="28" height="30"/>
+    </g>
+
+    <!-- Circuit trace lines -->
+    <g fill="#00a0c0" fill-opacity="0.28">
+      <rect x="0"  y="130" width="100" height="2"/>
+      <rect x="100" y="110" width="2"  height="22"/>
+      <rect x="100" y="110" width="80" height="2"/>
+      <rect x="180" y="100" width="2"  height="32"/>
+      <rect x="180" y="100" width="60" height="2"/>
+      <rect x="240" y="90"  width="2"  height="42"/>
+      <rect x="0"   y="180" width="60" height="2"/>
+      <rect x="60"  y="160" width="2"  height="22"/>
+      <rect x="60"  y="160" width="120" height="2"/>
+      <rect x="180" y="150" width="2"  height="32"/>
+      <rect x="180" y="150" width="80" height="2"/>
+    </g>
+
+    <!-- Ground: metal grating -->
+    <rect x="0" y="216" width="304" height="64" fill="#040c14"/>
+    <g fill="#081828" fill-opacity="0.80">
+      <rect x="0"   y="220" width="304" height="60"/>
+    </g>
+    <g fill="#00607a" fill-opacity="0.18">
+      <rect x="0"   y="232" width="304" height="2"/>
+      <rect x="0"   y="246" width="304" height="2"/>
+      <rect x="0"   y="260" width="304" height="2"/>
+      <rect x="20"  y="220" width="2"   height="60"/>
+      <rect x="50"  y="220" width="2"   height="60"/>
+      <rect x="80"  y="220" width="2"   height="60"/>
+      <rect x="110" y="220" width="2"   height="60"/>
+      <rect x="140" y="220" width="2"   height="60"/>
+      <rect x="170" y="220" width="2"   height="60"/>
+      <rect x="200" y="220" width="2"   height="60"/>
+      <rect x="230" y="220" width="2"   height="60"/>
+      <rect x="260" y="220" width="2"   height="60"/>
+      <rect x="290" y="220" width="2"   height="60"/>
+    </g>
+    <!-- Emergency floor lights -->
+    <g fill="#e03020" fill-opacity="0.45">
+      <rect x="0"   y="218" width="10" height="4"/>
+      <rect x="60"  y="218" width="10" height="4"/>
+      <rect x="120" y="218" width="10" height="4"/>
+      <rect x="180" y="218" width="10" height="4"/>
+      <rect x="240" y="218" width="10" height="4"/>
+      <rect x="294" y="218" width="10" height="4"/>
+    </g>
+  </g>
+
+  <!-- ════════════════════════════════════════════════════
+       FASE 5 — BUNKER  (x=960)
+  ════════════════════════════════════════════════════ -->
+  <g transform="translate(960 0)">
+    <!-- Very dark concrete ceiling -->
+    <rect width="304" height="280" fill="url(#bunkSky)"/>
+
+    <!-- Concrete wall texture blocks -->
+    <g fill="#111110">
+      <rect x="0"   y="0"  width="304" height="280"/>
+    </g>
+    <g fill="#181816" fill-opacity="0.90">
+      <!-- Horizontal mortar lines -->
+      <rect x="0"   y="18"  width="304" height="2"/>
+      <rect x="0"   y="36"  width="304" height="2"/>
+      <rect x="0"   y="54"  width="304" height="2"/>
+      <rect x="0"   y="72"  width="304" height="2"/>
+      <rect x="0"   y="90"  width="304" height="2"/>
+      <rect x="0"   y="108" width="304" height="2"/>
+      <rect x="0"   y="126" width="304" height="2"/>
+      <rect x="0"   y="144" width="304" height="2"/>
+      <rect x="0"   y="162" width="304" height="2"/>
+      <rect x="0"   y="180" width="304" height="2"/>
+      <rect x="0"   y="198" width="304" height="2"/>
+      <rect x="0"   y="216" width="304" height="2"/>
+      <rect x="0"   y="234" width="304" height="2"/>
+      <rect x="0"   y="252" width="304" height="2"/>
+    </g>
+    <!-- Vertical mortar lines (offset alternating rows) -->
+    <g fill="#181816" fill-opacity="0.70">
+      <!-- Even rows -->
+      <rect x="38"  y="0"  width="2" height="18"/>
+      <rect x="38"  y="36" width="2" height="18"/>
+      <rect x="38"  y="72" width="2" height="18"/>
+      <rect x="38"  y="108" width="2" height="18"/>
+      <rect x="38"  y="144" width="2" height="18"/>
+      <rect x="38"  y="180" width="2" height="18"/>
+      <rect x="38"  y="216" width="2" height="18"/>
+      <rect x="38"  y="252" width="2" height="28"/>
+      <rect x="96"  y="0"  width="2" height="18"/>
+      <rect x="96"  y="36" width="2" height="18"/>
+      <rect x="96"  y="72" width="2" height="18"/>
+      <rect x="96"  y="108" width="2" height="18"/>
+      <rect x="96"  y="144" width="2" height="18"/>
+      <rect x="96"  y="180" width="2" height="18"/>
+      <rect x="96"  y="216" width="2" height="18"/>
+      <rect x="96"  y="252" width="2" height="28"/>
+      <rect x="154" y="0"  width="2" height="18"/>
+      <rect x="154" y="36" width="2" height="18"/>
+      <rect x="154" y="72" width="2" height="18"/>
+      <rect x="154" y="108" width="2" height="18"/>
+      <rect x="154" y="144" width="2" height="18"/>
+      <rect x="154" y="180" width="2" height="18"/>
+      <rect x="154" y="216" width="2" height="18"/>
+      <rect x="154" y="252" width="2" height="28"/>
+      <rect x="212" y="0"  width="2" height="18"/>
+      <rect x="212" y="36" width="2" height="18"/>
+      <rect x="212" y="72" width="2" height="18"/>
+      <rect x="212" y="108" width="2" height="18"/>
+      <rect x="212" y="144" width="2" height="18"/>
+      <rect x="212" y="180" width="2" height="18"/>
+      <rect x="212" y="216" width="2" height="18"/>
+      <rect x="212" y="252" width="2" height="28"/>
+      <rect x="270" y="0"  width="2" height="18"/>
+      <rect x="270" y="36" width="2" height="18"/>
+      <rect x="270" y="72" width="2" height="18"/>
+      <rect x="270" y="108" width="2" height="18"/>
+      <rect x="270" y="144" width="2" height="18"/>
+      <rect x="270" y="180" width="2" height="18"/>
+      <rect x="270" y="216" width="2" height="18"/>
+      <rect x="270" y="252" width="2" height="28"/>
+      <!-- Odd rows (offset) -->
+      <rect x="16"  y="18" width="2" height="18"/>
+      <rect x="16"  y="54" width="2" height="18"/>
+      <rect x="16"  y="90" width="2" height="18"/>
+      <rect x="16"  y="126" width="2" height="18"/>
+      <rect x="16"  y="162" width="2" height="18"/>
+      <rect x="16"  y="198" width="2" height="18"/>
+      <rect x="16"  y="234" width="2" height="18"/>
+      <rect x="68"  y="18" width="2" height="18"/>
+      <rect x="68"  y="54" width="2" height="18"/>
+      <rect x="68"  y="90" width="2" height="18"/>
+      <rect x="68"  y="126" width="2" height="18"/>
+      <rect x="68"  y="162" width="2" height="18"/>
+      <rect x="68"  y="198" width="2" height="18"/>
+      <rect x="68"  y="234" width="2" height="18"/>
+      <rect x="126" y="18" width="2" height="18"/>
+      <rect x="126" y="54" width="2" height="18"/>
+      <rect x="126" y="90" width="2" height="18"/>
+      <rect x="126" y="126" width="2" height="18"/>
+      <rect x="126" y="162" width="2" height="18"/>
+      <rect x="126" y="198" width="2" height="18"/>
+      <rect x="126" y="234" width="2" height="18"/>
+      <rect x="184" y="18" width="2" height="18"/>
+      <rect x="184" y="54" width="2" height="18"/>
+      <rect x="184" y="90" width="2" height="18"/>
+      <rect x="184" y="126" width="2" height="18"/>
+      <rect x="184" y="162" width="2" height="18"/>
+      <rect x="184" y="198" width="2" height="18"/>
+      <rect x="184" y="234" width="2" height="18"/>
+      <rect x="242" y="18" width="2" height="18"/>
+      <rect x="242" y="54" width="2" height="18"/>
+      <rect x="242" y="90" width="2" height="18"/>
+      <rect x="242" y="126" width="2" height="18"/>
+      <rect x="242" y="162" width="2" height="18"/>
+      <rect x="242" y="198" width="2" height="18"/>
+      <rect x="242" y="234" width="2" height="18"/>
+      <rect x="296" y="18" width="2" height="18"/>
+      <rect x="296" y="54" width="2" height="18"/>
+      <rect x="296" y="90" width="2" height="18"/>
+      <rect x="296" y="126" width="2" height="18"/>
+      <rect x="296" y="162" width="2" height="18"/>
+      <rect x="296" y="198" width="2" height="18"/>
+      <rect x="296" y="234" width="2" height="18"/>
+    </g>
+
+    <!-- Dark ceiling structural element -->
+    <rect x="0" y="0" width="304" height="10" fill="#0a0a09"/>
+    <!-- Ceiling beam -->
+    <rect x="0" y="8" width="304" height="6" fill="#161614"/>
+
+    <!-- Emergency orange/red strip lights -->
+    <g fill="#c84018" fill-opacity="0.55">
+      <rect x="0"   y="10" width="50" height="3"/>
+      <rect x="60"  y="10" width="50" height="3"/>
+      <rect x="120" y="10" width="50" height="3"/>
+      <rect x="180" y="10" width="50" height="3"/>
+      <rect x="240" y="10" width="64" height="3"/>
+    </g>
+
+    <!-- Dim emergency lamp pools of light on wall -->
+    <g fill="#c84018" fill-opacity="0.08">
+      <rect x="20"  y="10" width="18" height="60"/>
+      <rect x="90"  y="10" width="18" height="60"/>
+      <rect x="160" y="10" width="18" height="60"/>
+      <rect x="230" y="10" width="18" height="60"/>
+    </g>
+
+    <!-- Pipes along top of wall -->
+    <g fill="#1e1e1c">
+      <rect x="0"   y="22" width="304" height="6"/>
+    </g>
+    <g fill="#2a2a28">
+      <rect x="0"   y="23" width="304" height="2"/>
+    </g>
+    <!-- Pipe joint bolts -->
+    <g fill="#141412">
+      <rect x="30"  y="22" width="6" height="6"/>
+      <rect x="70"  y="22" width="6" height="6"/>
+      <rect x="110" y="22" width="6" height="6"/>
+      <rect x="150" y="22" width="6" height="6"/>
+      <rect x="190" y="22" width="6" height="6"/>
+      <rect x="230" y="22" width="6" height="6"/>
+      <rect x="270" y="22" width="6" height="6"/>
+    </g>
+
+    <!-- Dark reinforcement stripes -->
+    <g fill="#0c0c0a" fill-opacity="0.60">
+      <rect x="0"   y="80"  width="304" height="8"/>
+      <rect x="0"   y="160" width="304" height="8"/>
+      <rect x="0"   y="230" width="304" height="8"/>
+    </g>
+
+    <!-- Floor: darker concrete with channel -->
+    <rect x="0"   y="240" width="304" height="40" fill="#0d0d0b"/>
+    <rect x="0"   y="252" width="304" height="2"  fill="#1a1a18"/>
+    <rect x="0"   y="268" width="304" height="4"  fill="#0a0a09"/>
+    <!-- Floor drain channel -->
+    <rect x="100" y="240" width="104" height="40" fill="#0b0b09"/>
+    <rect x="102" y="242" width="100" height="36" fill="#090908"/>
+    <!-- Drain grate lines -->
+    <g fill="#161614" fill-opacity="0.70">
+      <rect x="102" y="254" width="100" height="2"/>
+      <rect x="102" y="262" width="100" height="2"/>
+      <rect x="115" y="242" width="2"  height="36"/>
+      <rect x="130" y="242" width="2"  height="36"/>
+      <rect x="145" y="242" width="2"  height="36"/>
+      <rect x="160" y="242" width="2"  height="36"/>
+      <rect x="175" y="242" width="2"  height="36"/>
+      <rect x="190" y="242" width="2"  height="36"/>
+    </g>
+  </g>
+</svg>

@@ -383,11 +383,78 @@ let currentAmbienceHandle = null;
 let currentSceneAudio = { music: null, ambience: null };
 const audioStatusBindings = [];
 
+// ── Phase progression globals ──
+let currentPhase = 1;
+let carryOverStats = null; // { lives, maxBombs, firePower } carried between phases
+
+const ZOMBIE_TYPES = {
+    normal: { speed: 42, hp: 1, tint: [255, 255, 255] },
+    runner: { speed: 68, hp: 1, tint: [255, 130, 110] },
+    fat:    { speed: 26, hp: 2, tint: [160, 130, 220] },
+    mutant: { speed: 50, hp: 2, tint: [100, 210, 130] },
+};
+
+const PHASES = [
+    {
+        id: 1, name: "OPERACAO: RUA",
+        bg: "gameBackdrop", tiles: { floor:"floor",  wall:"wall",  box:"box"  },
+        music:   { name:"streetTheme",    volume:0.20, speed:1.00,  detune:0    },
+        ambience:{ name:"streetAmbience", volume:0.16, speed:1.00,  detune:0    },
+        zombies: [{type:"normal",count:3}],
+    },
+    {
+        id: 2, name: "OPERACAO: HOSPITAL",
+        bg: "hospitalBackdrop", tiles: { floor:"floor2", wall:"wall2", box:"box2" },
+        music:   { name:"streetTheme",    volume:0.18, speed:0.90, detune:-200 },
+        ambience:{ name:"streetAmbience", volume:0.10, speed:0.90, detune:-200 },
+        zombies: [{type:"normal",count:2},{type:"runner",count:2}],
+    },
+    {
+        id: 3, name: "OPERACAO: SHOPPING",
+        bg: "shoppingBackdrop", tiles: { floor:"floor3", wall:"wall3", box:"box3" },
+        music:   { name:"streetTheme",    volume:0.22, speed:1.10, detune:300  },
+        ambience:{ name:"streetAmbience", volume:0.12, speed:1.10, detune:300  },
+        zombies: [{type:"normal",count:2},{type:"fat",count:2},{type:"runner",count:1}],
+    },
+    {
+        id: 4, name: "OPERACAO: LABORATORIO",
+        bg: "labBackdrop", tiles: { floor:"floor4", wall:"wall4", box:"box4" },
+        music:   { name:"streetTheme",    volume:0.20, speed:1.14, detune:-100 },
+        ambience:{ name:"streetAmbience", volume:0.08, speed:1.14, detune:-100 },
+        zombies: [{type:"mutant",count:2},{type:"runner",count:2},{type:"fat",count:1}],
+    },
+    {
+        id: 5, name: "OPERACAO: BUNKER",
+        bg: "bunkerBackdrop", tiles: { floor:"floor5", wall:"wall5", box:"box5" },
+        music:   { name:"streetTheme",    volume:0.22, speed:0.88, detune:-400 },
+        ambience:{ name:"streetAmbience", volume:0.14, speed:0.88, detune:-400 },
+        zombies: [{type:"normal",count:2},{type:"runner",count:2},{type:"fat",count:1},{type:"mutant",count:1}],
+    },
+];
+
+function saveProgress(phase, lives, maxBombs, firePower) {
+    try { localStorage.setItem("boomz_save", JSON.stringify({ phase, lives, maxBombs, firePower })); } catch {}
+}
+function loadProgress() {
+    try { const raw = localStorage.getItem("boomz_save"); return raw ? JSON.parse(raw) : null; } catch { return null; }
+}
+function clearProgress() {
+    try { localStorage.removeItem("boomz_save"); } catch {}
+}
+
 const SOLID = 1;
 const DESTRUCTIBLE = 2;
 const EMPTY = 0;
 const POWER_BOMB = "bomb";
 const POWER_FIRE = "fire";
+const POWER_LIFE = "life";
+
+const DIFFICULTIES = {
+    easy:   { label: "FACIL",   playerSpeed: 136, zombieSpeedMult: 0.60, powerupChance: 0.80, boxDensity: 0.17, lifeChance: 0.24, startBombs: 2, startFire: 3 },
+    medium: { label: "MEDIO",   playerSpeed: 120, zombieSpeedMult: 1.00, powerupChance: 0.55, boxDensity: 0.24, lifeChance: 0.08, startBombs: 1, startFire: 2 },
+    hard:   { label: "DIFICIL", playerSpeed: 108, zombieSpeedMult: 1.22, powerupChance: 0.38, boxDensity: 0.28, lifeChance: 0.04, startBombs: 1, startFire: 2 },
+};
+let selectedDifficulty = "medium";
 
 const PLAYER_ANIMS = {
     "idle-down": { from: 0, to: 1, speed: 4, loop: true },
@@ -493,12 +560,16 @@ function applySceneAudio() {
             currentMusicHandle = play(currentSceneAudio.music.name, {
                 loop: true,
                 volume: currentSceneAudio.music.volume,
+                speed:  currentSceneAudio.music.speed  ?? 1.0,
+                detune: currentSceneAudio.music.detune ?? 0,
             });
         }
         if (currentSceneAudio.ambience) {
             currentAmbienceHandle = play(currentSceneAudio.ambience.name, {
                 loop: true,
                 volume: currentSceneAudio.ambience.volume,
+                speed:  currentSceneAudio.ambience.speed  ?? 1.0,
+                detune: currentSceneAudio.ambience.detune ?? 0,
             });
         }
     } catch {}
@@ -545,6 +616,12 @@ await Promise.all([
         menuBackdrop: { x: 0, y: 0, width: 304, height: 280 },
         gameBackdrop: { x: 320, y: 0, width: 304, height: 280 },
     }),
+    loadSpriteAtlas("assets/backgrounds/phase-backdrops.svg", {
+        hospitalBackdrop: { x: 0,   y: 0, width: 304, height: 280 },
+        shoppingBackdrop: { x: 320, y: 0, width: 304, height: 280 },
+        labBackdrop:      { x: 640, y: 0, width: 304, height: 280 },
+        bunkerBackdrop:   { x: 960, y: 0, width: 304, height: 280 },
+    }),
     loadSpriteAtlas("assets/ui/panels.svg", {
         hudPanel: { x: 0, y: 0, width: 304, height: 40 },
         menuPlaque: { x: 0, y: 40, width: 220, height: 70 },
@@ -563,6 +640,20 @@ await Promise.all([
         floor: { x: 0, y: 0, width: 16, height: 16 },
         wall: { x: 16, y: 0, width: 16, height: 16 },
         box: { x: 32, y: 0, width: 16, height: 16 },
+    }),
+    loadSpriteAtlas("assets/world/phase-tiles.svg", {
+        floor2: { x: 0, y: 0,  width: 16, height: 16 },
+        wall2:  { x: 16, y: 0, width: 16, height: 16 },
+        box2:   { x: 32, y: 0, width: 16, height: 16 },
+        floor3: { x: 0, y: 16,  width: 16, height: 16 },
+        wall3:  { x: 16, y: 16, width: 16, height: 16 },
+        box3:   { x: 32, y: 16, width: 16, height: 16 },
+        floor4: { x: 0, y: 32,  width: 16, height: 16 },
+        wall4:  { x: 16, y: 32, width: 16, height: 16 },
+        box4:   { x: 32, y: 32, width: 16, height: 16 },
+        floor5: { x: 0, y: 48,  width: 16, height: 16 },
+        wall5:  { x: 16, y: 48, width: 16, height: 16 },
+        box5:   { x: 32, y: 48, width: 16, height: 16 },
     }),
     loadSpriteAtlas("assets/characters/chars.svg", {
         player: { x: 0, y: 0, width: 16, height: 16 },
@@ -635,7 +726,7 @@ function generateMap() {
                 gameMap[y][x] === EMPTY
                 && !safeZone.has(`${x},${y}`)
                 && !isEdgeCorridor(x, y)
-                && Math.random() < 0.24
+                && Math.random() < DIFFICULTIES[selectedDifficulty].boxDensity
             ) {
                 gameMap[y][x] = DESTRUCTIBLE;
             }
@@ -764,18 +855,25 @@ scene("menu", () => {
 
     configureChase(0);
 
-    const options = [
-        { label: "INICIAR OPERACAO", target: "game" },
-        { label: "COMO JOGAR", target: "controls" },
-        { label: () => audioMuted ? "SOM: OFF" : "SOM: ON", isSoundToggle: true },
-    ];
+    const savedData = loadProgress();
+    const options = [];
+    if (savedData && savedData.phase > 1) {
+        options.push({ label: `CONTINUAR FASE ${savedData.phase}`, isContinue: true, savedData });
+    }
+    options.push({ label: "NOVA OPERACAO", isNewGame: true });
+    options.push({ label: () => `DIFICULDADE: ${DIFFICULTIES[selectedDifficulty].label}`, isDiffToggle: true });
+    options.push({ label: "COMO JOGAR", target: "controls" });
+    options.push({ label: () => audioMuted ? "SOM: OFF" : "SOM: ON", isSoundToggle: true });
 
     let selected = 0;
     const buttons = [];
     const labels = [];
 
+    const menuButtonSpacing = options.length <= 3 ? 40 : options.length <= 4 ? 32 : 26;
+    const menuButtonStartY = options.length <= 3 ? 162 : options.length <= 4 ? 148 : 136;
+
     options.forEach((option, index) => {
-        const y = 162 + index * 40;
+        const y = menuButtonStartY + index * menuButtonSpacing;
         const button = add([
             sprite(index === selected ? "menuButtonActive" : "menuButton"),
             pos(width() / 2, y),
@@ -794,12 +892,12 @@ scene("menu", () => {
 
     const leftBat = add([
         sprite("selectorBat"),
-        pos(width() / 2 - 96, 162),
+        pos(width() / 2 - 96, menuButtonStartY),
         anchor("center"),
     ]);
     const rightBat = add([
         sprite("selectorBat"),
-        pos(width() / 2 + 96, 162),
+        pos(width() / 2 + 96, menuButtonStartY),
         anchor("center"),
         scale(vec2(-1, 1)),
     ]);
@@ -812,8 +910,8 @@ scene("menu", () => {
                 labels[index].text = options[index].label();
             }
         });
-        leftBat.pos.y = 162 + selected * 40;
-        rightBat.pos.y = 162 + selected * 40;
+        leftBat.pos.y = menuButtonStartY + selected * menuButtonSpacing;
+        rightBat.pos.y = menuButtonStartY + selected * menuButtonSpacing;
     }
 
     onUpdate(() => {
@@ -883,7 +981,28 @@ scene("menu", () => {
             refreshMenu();
             return;
         }
+        if (opt.isDiffToggle) {
+            const order = ["easy", "medium", "hard"];
+            selectedDifficulty = order[(order.indexOf(selectedDifficulty) + 1) % order.length];
+            playSfx("uiMove");
+            refreshMenu();
+            return;
+        }
         playSfx("uiConfirm");
+        if (opt.isContinue) {
+            const s = opt.savedData;
+            currentPhase = s.phase;
+            carryOverStats = { lives: s.lives, maxBombs: s.maxBombs, firePower: s.firePower };
+            go("game");
+            return;
+        }
+        if (opt.isNewGame) {
+            currentPhase = 1;
+            carryOverStats = null;
+            clearProgress();
+            go("game");
+            return;
+        }
         go(opt.target);
     }
 
@@ -1008,6 +1127,10 @@ scene("controls", () => {
 });
 
 scene("game", () => {
+    const phaseConfig = PHASES[currentPhase - 1];
+    const diffConfig = DIFFICULTIES[selectedDifficulty];
+    const _startStats = carryOverStats || { lives: START_LIVES, maxBombs: diffConfig.startBombs, firePower: diffConfig.startFire };
+
     setSceneAudio({
         music: { name: "streetTheme", volume: 0.2 },
         ambience: { name: "streetAmbience", volume: 0.16 },
@@ -1020,9 +1143,9 @@ scene("game", () => {
     virtualPausePressed = false;
     Object.keys(vKeys).forEach((k) => { vKeys[k] = false; });
 
-    let lives = START_LIVES;
-    let maxBombs = START_BOMBS;
-    let firePower = START_FIRE;
+    let lives = _startStats.lives;
+    let maxBombs = _startStats.maxBombs;
+    let firePower = _startStats.firePower;
     let isPaused = false;
     let isInvincible = false;
     let runEnded = false;
@@ -1041,24 +1164,25 @@ scene("game", () => {
     const pauseOptions = [
         { label: "Voltar para a rua", action: () => closePause() },
         { label: "Recomecar varredura", action: () => go("game") },
-        { label: "Tela inicial", action: () => go("menu") },
+        { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
         { label: () => audioMuted ? "Som: OFF" : "Som: ON", action: () => { toggleMute(); refreshPauseMenu(); } },
     ];
 
-    add([sprite("gameBackdrop"), pos(0, 0)]);
+    add([sprite(phaseConfig.bg), pos(0, 0)]);
     add([sprite("hudPanel"), pos(0, 0), fixed(), z(100)]);
 
+    const tileNames = phaseConfig.tiles;
     for (let y = 0; y < MAP_HEIGHT; y++) {
         for (let x = 0; x < MAP_WIDTH; x++) {
             add([
-                sprite("floor"),
+                sprite(tileNames.floor),
                 pos(x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE),
                 z(1),
             ]);
 
             if (gameMap[y][x] === SOLID) {
                 add([
-                    sprite("wall"),
+                    sprite(tileNames.wall),
                     pos(x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE),
                     area(),
                     body({ isStatic: true }),
@@ -1067,7 +1191,7 @@ scene("game", () => {
                 ]);
             } else if (gameMap[y][x] === DESTRUCTIBLE) {
                 add([
-                    sprite("box"),
+                    sprite(tileNames.box),
                     pos(x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE),
                     area(),
                     body({ isStatic: true }),
@@ -1081,7 +1205,7 @@ scene("game", () => {
     }
 
     add([
-        text(GAME_KICKER, { size: 8 }),
+        text(`FASE ${currentPhase}  •  ${GAME_KICKER}`, { size: 8 }),
         pos(width() / 2, 8),
         anchor("center"),
         color(231, 203, 121),
@@ -1154,7 +1278,7 @@ scene("game", () => {
         z(actorDepth(worldPos(1, 1).y)),
         "player",
         {
-            speed: 120,
+            speed: diffConfig.playerSpeed,
             passThroughBomb: null,
             facing: "down",
             visualOffset: ACTOR_VISUAL_OFFSET,
@@ -1205,13 +1329,15 @@ scene("game", () => {
         syncActorVisual(actor);
     }
 
-    function createActorVisual(actor, spriteName, defaultAnim) {
-        actor.visual = add([
+    function createActorVisual(actor, spriteName, defaultAnim, tint) {
+        const components = [
             sprite(spriteName, { anim: defaultAnim }),
             pos(actor.pos.add(actor.visualOffset)),
             anchor("center"),
             z(actorDepth(actor.pos.y)),
-        ]);
+        ];
+        if (tint) components.push(color(tint[0], tint[1], tint[2]));
+        actor.visual = add(components);
         actor.visual.animName = defaultAnim;
         actor.visual.hidden = actor.isHidden;
         syncActorVisual(actor);
@@ -1277,16 +1403,16 @@ scene("game", () => {
         resultOptions[resultSelection].action();
     }
 
-    function openResultScreen(title, tint, subtitle, statLines) {
+    function openResultScreen(title, tint, subtitle, statLines, customOptions) {
         runEnded = true;
         isPaused = false;
         clearPauseUI();
         clearTag("toast");
         clearResultUI();
 
-        resultOptions = [
-            { label: "Tentar de novo", action: () => go("game") },
-            { label: "Tela inicial", action: () => go("menu") },
+        resultOptions = customOptions || [
+            { label: "Tentar de novo", action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("game"); } },
+            { label: "Tela inicial",   action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
         ];
 
         const hasStats = statLines.length > 0;
@@ -1391,8 +1517,73 @@ scene("game", () => {
         return entityGrid.x === gx && entityGrid.y === gy;
     }
 
+    function spawnZombieOfType(spawnPos, zombieType) {
+        const typeConfig = ZOMBIE_TYPES[zombieType];
+        const tint = typeConfig.tint;
+        const g = gridFromPos(spawnPos);
+        let finalPos = spawnPos;
+        outer: for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const nx = g.x + dx;
+                const ny = g.y + dy;
+                if (inBounds(nx, ny) && gameMap[ny][nx] === EMPTY) {
+                    finalPos = worldPos(nx, ny);
+                    break outer;
+                }
+            }
+        }
+        const depth = actorDepth(finalPos.y);
+        const newZombie = add([
+            sprite("zombie"),
+            opacity(0),
+            pos(finalPos),
+            area({ shape: new Rect(vec2(3, 2), 10, 13) }),
+            anchor("center"),
+            z(depth),
+            "zombie",
+            {
+                speed: Math.round(typeConfig.speed * diffConfig.zombieSpeedMult),
+                zombieType,
+                hp: typeConfig.hp,
+                direction: choose(["left", "right", "up", "down"]),
+                moveTimer: rand(0.4, 1.4),
+                facing: "down",
+                visualOffset: ACTOR_VISUAL_OFFSET,
+                isHidden: false,
+            },
+        ]);
+        newZombie.facing = newZombie.direction;
+        createActorVisual(newZombie, "zombieAnim", "idle-down", tint);
+        updateActorVisual(newZombie, false);
+        totalEnemies += 1;
+    }
+
     function defeatZombie(zombie) {
         if (!zombie.exists()) return;
+
+        zombie.hp -= 1;
+        if (zombie.hp > 0) {
+            // Flash white on hit
+            if (zombie.visual && zombie.visual.exists()) {
+                zombie.visual.color = rgb(255, 255, 255);
+                wait(0.1, () => {
+                    if (zombie.exists() && zombie.visual && zombie.visual.exists()) {
+                        const tc = ZOMBIE_TYPES[zombie.zombieType] ? ZOMBIE_TYPES[zombie.zombieType].tint : [255,255,255];
+                        zombie.visual.color = rgb(tc[0], tc[1], tc[2]);
+                    }
+                });
+            }
+            return;
+        }
+
+        // On-death spawn
+        if (zombie.zombieType === "fat") {
+            spawnZombieOfType(zombie.pos, "runner");
+        } else if (zombie.zombieType === "mutant") {
+            spawnZombieOfType(zombie.pos, "normal");
+            spawnZombieOfType(zombie.pos, "normal");
+        }
+
         if (zombie.visual && zombie.visual.exists()) {
             destroy(zombie.visual);
         }
@@ -1432,8 +1623,26 @@ scene("game", () => {
         });
     }
 
+    let lifeSpawnedThisPhase = false;
+
     function spawnPowerup(gx, gy) {
-        if (Math.random() > 0.55) return;
+        // Life pickup: phases 2+, max 1 per phase, rare
+        if (currentPhase >= 2 && !lifeSpawnedThisPhase && Math.random() < diffConfig.lifeChance) {
+            lifeSpawnedThisPhase = true;
+            add([
+                sprite("heart"),
+                pos(worldPos(gx, gy)),
+                area({ shape: new Rect(vec2(-4, -4), 8, 8) }),
+                anchor("center"),
+                scale(1.4),
+                z(12),
+                "powerup",
+                { powerType: POWER_LIFE },
+            ]);
+            return;
+        }
+
+        if (Math.random() > diffConfig.powerupChance) return;
 
         const kind = Math.random() < 0.5 ? POWER_BOMB : POWER_FIRE;
         add([
@@ -1646,14 +1855,24 @@ scene("game", () => {
         if (virtualBombPressed) { virtualBombPressed = false; placeBomb(); }
     });
 
+    const zombieTypeList = [];
+    for (const group of phaseConfig.zombies) {
+        for (let i = 0; i < group.count; i++) zombieTypeList.push(group.type);
+    }
+
     const spawnCandidates = [
         { x: MAP_WIDTH - 3, y: MAP_HEIGHT - 3 },
         { x: MAP_WIDTH - 3, y: 3 },
         { x: 3, y: MAP_HEIGHT - 3 },
+        { x: 3, y: 3 },
+        { x: MAP_WIDTH - 3, y: Math.floor(MAP_HEIGHT / 2) },
+        { x: 3, y: Math.floor(MAP_HEIGHT / 2) },
+        { x: Math.floor(MAP_WIDTH / 2), y: MAP_HEIGHT - 3 },
     ];
 
     const zombieSpawns = [];
-    spawnCandidates.forEach((origin) => {
+    for (const origin of spawnCandidates) {
+        if (zombieSpawns.length >= zombieTypeList.length) break;
         let placed = false;
         for (let dy = -1; dy <= 1 && !placed; dy++) {
             for (let dx = -1; dx <= 1 && !placed; dx++) {
@@ -1665,9 +1884,13 @@ scene("game", () => {
                 }
             }
         }
-    });
+    }
 
-    zombieSpawns.forEach((spawn) => {
+    zombieSpawns.forEach((spawn, index) => {
+        const zombieType = zombieTypeList[index] || "normal";
+        const typeConfig = ZOMBIE_TYPES[zombieType];
+        const tint = typeConfig.tint;
+
         const zombie = add([
             sprite("zombie"),
             opacity(0),
@@ -1677,7 +1900,9 @@ scene("game", () => {
             z(actorDepth(worldPos(spawn.x, spawn.y).y)),
             "zombie",
             {
-                speed: 42,
+                speed: Math.round(typeConfig.speed * diffConfig.zombieSpeedMult),
+                zombieType,
+                hp: typeConfig.hp,
                 direction: choose(["left", "right", "up", "down"]),
                 moveTimer: rand(0.4, 1.4),
                 facing: "down",
@@ -1687,7 +1912,7 @@ scene("game", () => {
         ]);
 
         zombie.facing = zombie.direction;
-        createActorVisual(zombie, "zombieAnim", "idle-down");
+        createActorVisual(zombie, "zombieAnim", "idle-down", tint);
         updateActorVisual(zombie, false);
     });
     totalEnemies = zombieSpawns.length;
@@ -1708,6 +1933,34 @@ scene("game", () => {
 
     onUpdate("zombie", (zombie) => {
         if (isPaused || runEnded) return;
+
+        // Runner: line-of-sight chase behaviour
+        if (zombie.zombieType === "runner" && player.exists()) {
+            const zg = gridFromPos(zombie.pos);
+            const pg = gridFromPos(player.pos);
+            let chaseDir = null;
+
+            if (zg.y === pg.y && zg.x !== pg.x) {
+                const step = pg.x > zg.x ? 1 : -1;
+                let blocked = false;
+                for (let x = zg.x + step; x !== pg.x; x += step) {
+                    if (gameMap[zg.y][x] >= SOLID) { blocked = true; break; }
+                }
+                if (!blocked) chaseDir = step > 0 ? "right" : "left";
+            } else if (zg.x === pg.x && zg.y !== pg.y) {
+                const step = pg.y > zg.y ? 1 : -1;
+                let blocked = false;
+                for (let y = zg.y + step; y !== pg.y; y += step) {
+                    if (gameMap[y][zg.x] >= SOLID) { blocked = true; break; }
+                }
+                if (!blocked) chaseDir = step > 0 ? "down" : "up";
+            }
+
+            if (chaseDir) {
+                zombie.direction = chaseDir;
+                zombie.moveTimer = rand(0.5, 1.6);
+            }
+        }
 
         zombie.moveTimer -= dt();
         if (zombie.moveTimer <= 0) {
@@ -1755,7 +2008,15 @@ scene("game", () => {
     });
 
     player.onCollide("powerup", (powerup) => {
-        if (powerup.powerType === POWER_BOMB) {
+        if (powerup.powerType === POWER_LIFE) {
+            if (lives < START_LIVES) {
+                lives += 1;
+                updateHearts();
+                showToast("+ Vida!", [240, 100, 120]);
+            } else {
+                showToast("Vida cheia!", [240, 100, 120]);
+            }
+        } else if (powerup.powerType === POWER_BOMB) {
             maxBombs += 1;
             updateStats();
             showToast("+ Carga", [239, 215, 159]);
@@ -1785,7 +2046,34 @@ scene("game", () => {
             `Ferimentos: ${START_LIVES - lives}`,
             `Zumbis eliminados: ${enemiesDefeated}/${totalEnemies}`,
         ];
-        openResultScreen("AREA LIMPA", [236, 208, 122], "Resumo da varredura", lines);
+
+        if (currentPhase < 5) {
+            const nextNum = currentPhase + 1;
+            saveProgress(nextNum, lives, maxBombs, firePower);
+            openResultScreen(
+                `FASE ${currentPhase} CONCLUIDA`, [236, 208, 122],
+                phaseConfig.name, lines,
+                [
+                    { label: `PROXIMA FASE (${nextNum}/5)`, action: () => {
+                        currentPhase = nextNum;
+                        carryOverStats = { lives, maxBombs, firePower };
+                        go("game");
+                    }},
+                    { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
+                ]
+            );
+        } else {
+            openResultScreen(
+                "AREA LIMPA", [236, 208, 122], "Fase 5 concluida!", lines,
+                [
+                    { label: "ENFRENTAR O CHEFAO", action: () => {
+                        carryOverStats = { lives, maxBombs, firePower };
+                        go("boss");
+                    }},
+                    { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
+                ]
+            );
+        }
     }
 
     function playerHit() {
@@ -1994,6 +2282,657 @@ scene("game", () => {
 
     updateHearts();
     updateStats();
+});
+
+// ── Boss Scene ──────────────────────────────────────────────────────
+scene("boss", () => {
+    const _bossDiffConfig = DIFFICULTIES[selectedDifficulty];
+    const _bossStartStats = carryOverStats || { lives: START_LIVES, maxBombs: _bossDiffConfig.startBombs, firePower: _bossDiffConfig.startFire };
+
+    setSceneAudio({
+        music: { name: "streetTheme", volume: 0.32 },
+        ambience: { name: "streetAmbience", volume: 0.10 },
+    });
+
+    // Open arena: only fixed walls, no destructible boxes
+    gameMap = [];
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+        gameMap[y] = [];
+        for (let x = 0; x < MAP_WIDTH; x++) {
+            if (x === 0 || y === 0 || x === MAP_WIDTH - 1 || y === MAP_HEIGHT - 1) {
+                gameMap[y][x] = SOLID;
+            } else if (x % 2 === 0 && y % 2 === 0) {
+                gameMap[y][x] = SOLID;
+            } else {
+                gameMap[y][x] = EMPTY;
+            }
+        }
+    }
+
+    virtualBombPressed  = false;
+    virtualPausePressed = false;
+    Object.keys(vKeys).forEach((k) => { vKeys[k] = false; });
+
+    let bossLives = _bossStartStats.lives;
+    let maxBombs = _bossStartStats.maxBombs;
+    let firePower = _bossStartStats.firePower;
+    let isPaused = false;
+    let isInvincible = false;
+    let runEnded = false;
+    const battleStartedAt = Date.now();
+    let resultSelection = 0;
+    let resultButtons = [];
+    let resultLabels = [];
+    let resultOptions = [];
+    let pauseSelection = 0;
+    let pauseButtons = [];
+    let pauseLabels = [];
+    let vNavTimer = 0;
+
+    add([sprite("bunkerBackdrop"), pos(0, 0)]);
+    add([sprite("hudPanel"), pos(0, 0), fixed(), z(100)]);
+
+    // Render tiles (bunker theme for boss arena)
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+        for (let x = 0; x < MAP_WIDTH; x++) {
+            add([sprite("floor5"), pos(x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE), z(1)]);
+            if (gameMap[y][x] === SOLID) {
+                add([sprite("wall5"), pos(x * TILE_SIZE, MAP_OFFSET_Y + y * TILE_SIZE), area(), body({ isStatic: true }), z(5), "wall"]);
+            }
+        }
+    }
+
+    // HUD title
+    add([text(`FASE 6  •  CHEFAO`, { size: 8 }), pos(width() / 2, 8), anchor("center"), color(255, 100, 80), fixed(), z(101)]);
+
+    // Hearts (left, row 2)
+    const hearts = [];
+    for (let i = 0; i < START_LIVES; i++) {
+        hearts.push(add([sprite("heart"), pos(18 + i * 15, 27), anchor("center"), scale(1.3), fixed(), z(101)]));
+    }
+    function updateHearts() {
+        hearts.forEach((h, i) => h.use(sprite(i < bossLives ? "heart" : "heartEmpty")));
+    }
+
+    // Boss HP bar (right side, row 2)
+    const BOSS_MAX_HP = 5;
+    let bossHp = BOSS_MAX_HP;
+    const bossHpBlocks = [];
+    add([text("HP", { size: 7 }), pos(82, 21), anchor("left"), color(255, 140, 120), fixed(), z(101)]);
+    for (let i = 0; i < BOSS_MAX_HP; i++) {
+        bossHpBlocks.push(add([
+            rect(18, 10),
+            pos(96 + i * 22, 22),
+            color(220, 70, 60),
+            fixed(),
+            z(101),
+        ]));
+    }
+
+    function updateBossHpBar() {
+        bossHpBlocks.forEach((block, i) => {
+            block.color = i < bossHp ? rgb(220, 70, 60) : rgb(50, 30, 30);
+        });
+    }
+
+    add([text("ESC PAUSA", { size: 8 }), pos(width() - 8, 12), anchor("right"), color(182, 194, 188), fixed(), z(101)]);
+
+    // Bomb/fire stats (far right row 2)
+    add([sprite("bombPower"), pos(208, 27), anchor("center"), scale(1.3), fixed(), z(101)]);
+    const bombCountText = add([text(`x${maxBombs}`, { size: 12 }), pos(218, 27), anchor("left"), color(239, 215, 159), fixed(), z(101)]);
+    add([sprite("firePower"), pos(248, 27), anchor("center"), scale(1.3), fixed(), z(101)]);
+    const fireCountText = add([text(`x${firePower}`, { size: 12 }), pos(258, 27), anchor("left"), color(239, 195, 120), fixed(), z(101)]);
+
+    function updateStats() {
+        bombCountText.text = `x${maxBombs}`;
+        fireCountText.text = `x${firePower}`;
+    }
+
+    function formatBattleTime(ms) {
+        const s = Math.max(0, Math.floor(ms / 1000));
+        return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+    }
+
+    // ── Player ──
+    const player = add([
+        sprite("player"), opacity(0), pos(worldPos(1, 1)),
+        area({ shape: new Rect(vec2(3, 2), 10, 13) }), body(), anchor("center"),
+        z(actorDepth(worldPos(1, 1).y)), "player",
+        { speed: DIFFICULTIES[selectedDifficulty].playerSpeed, passThroughBomb: null, facing: "down", visualOffset: ACTOR_VISUAL_OFFSET, isHidden: false },
+    ]);
+
+    function syncActorVisual(actor) {
+        if (!actor.visual || !actor.visual.exists()) return;
+        actor.visual.pos = actor.pos.add(actor.visualOffset);
+        actor.visual.z = actorDepth(actor.pos.y);
+        actor.visual.hidden = actor.isHidden;
+    }
+    function setActorHidden(actor, hidden) {
+        actor.isHidden = hidden;
+        if (actor.visual && actor.visual.exists()) actor.visual.hidden = hidden;
+    }
+    function playActorAnim(actor, animName, flipX = false) {
+        if (!actor.visual || !actor.visual.exists()) return;
+        if (actor.visual.animName !== animName) { actor.visual.play(animName); actor.visual.animName = animName; }
+        actor.visual.flipX = flipX;
+    }
+    function updateActorVisual(actor, moving) {
+        let animName = "idle-down", flipX = false;
+        if (actor.facing === "left")       { animName = moving ? "walk-side" : "idle-side"; flipX = true; }
+        else if (actor.facing === "right") { animName = moving ? "walk-side" : "idle-side"; }
+        else if (actor.facing === "up")    { animName = moving ? "walk-up"   : "idle-up"; }
+        else                               { animName = moving ? "walk-down" : "idle-down"; }
+        playActorAnim(actor, animName, flipX);
+        syncActorVisual(actor);
+    }
+
+    const playerVisualComps = [
+        sprite("playerAnim", { anim: "idle-down" }),
+        pos(player.pos.add(player.visualOffset)),
+        anchor("center"),
+        z(actorDepth(player.pos.y)),
+    ];
+    player.visual = add(playerVisualComps);
+    player.visual.animName = "idle-down";
+    player.visual.hidden = false;
+    syncActorVisual(player);
+
+    // ── Bomb helpers ──
+    function tileHasBomb(gx, gy) {
+        return get("bomb").find((b) => b.gridX === gx && b.gridY === gy);
+    }
+    function tileBlockedForEnemy(gx, gy) {
+        if (!inBounds(gx, gy)) return true;
+        if (gameMap[gy][gx] === SOLID || gameMap[gy][gx] === DESTRUCTIBLE) return true;
+        return Boolean(tileHasBomb(gx, gy));
+    }
+    function entityOccupiesTile(entity, gx, gy) {
+        const g = gridFromPos(entity.pos);
+        return g.x === gx && g.y === gy;
+    }
+    function getExplosionSpriteState(dir, isEnd) {
+        if (dir.x !== 0) return { anim: isEnd ? "horizontal-end-right" : "horizontal-mid", flipX: dir.x < 0, flipY: false };
+        return { anim: isEnd ? "vertical-end-down" : "vertical-mid", flipX: false, flipY: dir.y < 0 };
+    }
+
+    function showToast(message, tint) {
+        const t = add([text(message, { size: 14 }), pos(width() / 2, 56), anchor("center"), color(tint[0], tint[1], tint[2]), fixed(), z(140), move(UP, 16), opacity(1), "toast"]);
+        wait(0.7, () => { if (t.exists()) destroy(t); });
+    }
+
+    // ── Minions (spawned by boss) ──
+    function spawnMinion(spawnPos) {
+        const g = gridFromPos(spawnPos);
+        let finalPos = spawnPos;
+        outer: for (let dy = -2; dy <= 2; dy++) {
+            for (let dx = -2; dx <= 2; dx++) {
+                const nx = g.x + dx, ny = g.y + dy;
+                if (inBounds(nx, ny) && gameMap[ny][nx] === EMPTY) { finalPos = worldPos(nx, ny); break outer; }
+            }
+        }
+        const minionSpeed = Math.round(42 * DIFFICULTIES[selectedDifficulty].zombieSpeedMult);
+        const m = add([
+            sprite("zombie"), opacity(0), pos(finalPos),
+            area({ shape: new Rect(vec2(3, 2), 10, 13) }), anchor("center"),
+            z(actorDepth(finalPos.y)), "minion",
+            { speed: minionSpeed, direction: choose(["left","right","up","down"]), moveTimer: rand(0.4,1.4), facing: "down", visualOffset: ACTOR_VISUAL_OFFSET, isHidden: false },
+        ]);
+        m.facing = m.direction;
+        const mv = add([sprite("zombieAnim", { anim: "idle-down" }), pos(m.pos.add(m.visualOffset)), anchor("center"), z(actorDepth(m.pos.y))]);
+        mv.animName = "idle-down"; m.visual = mv;
+    }
+
+    onUpdate("minion", (m) => {
+        if (isPaused || runEnded) return;
+        m.moveTimer -= dt();
+        if (m.moveTimer <= 0) {
+            m.moveTimer = rand(0.5, 1.6);
+            const g = gridFromPos(m.pos);
+            const opts = [{name:"left",x:-1,y:0},{name:"right",x:1,y:0},{name:"up",x:0,y:-1},{name:"down",x:0,y:1}]
+                .filter(d => !tileBlockedForEnemy(g.x+d.x, g.y+d.y));
+            if (opts.length > 0) m.direction = choose(opts).name;
+        }
+        let dx = 0, dy = 0;
+        if (m.direction === "left") dx = -1; if (m.direction === "right") dx = 1;
+        if (m.direction === "up")   dy = -1; if (m.direction === "down")  dy = 1;
+        m.facing = m.direction;
+        const g = gridFromPos(m.pos);
+        const lc = worldPos(g.x, g.y);
+        if (dx !== 0) m.pos.y += (lc.y - m.pos.y) * 0.35;
+        if (dy !== 0) m.pos.x += (lc.x - m.pos.x) * 0.35;
+        const np = m.pos.add(vec2(dx * m.speed * dt(), dy * m.speed * dt()));
+        const ng = gridFromPos(np);
+        if ((ng.x !== g.x || ng.y !== g.y) && tileBlockedForEnemy(ng.x, ng.y)) return;
+        m.pos = np;
+        if (m.visual?.exists()) {
+            let an = "idle-down", fx = false;
+            if (m.facing==="left") { an="walk-side"; fx=true; } else if(m.facing==="right") an="walk-side";
+            else if(m.facing==="up") an="walk-up"; else an="walk-down";
+            if (m.visual.animName !== an) { m.visual.play(an); m.visual.animName = an; }
+            m.visual.flipX = fx;
+            m.visual.pos = m.pos.add(m.visualOffset);
+            m.visual.z = actorDepth(m.pos.y);
+        }
+    });
+
+    // ── Boss entity ──
+    const BOSS_SPEED_PATROL = 36;
+    const BOSS_SPEED_CHARGE = 164;
+    const bossSpawn = worldPos(Math.floor(MAP_WIDTH / 2), Math.floor(MAP_HEIGHT / 2));
+    const boss = add([
+        sprite("zombie"), opacity(0), pos(bossSpawn),
+        area({ shape: new Rect(vec2(-12, -10), 24, 24) }),
+        anchor("center"), z(actorDepth(bossSpawn.y)), "boss",
+        {
+            hp: BOSS_MAX_HP,
+            state: "patrol",        // patrol | charge | stomp | dead
+            stateTimer: rand(2, 4),
+            chargeDir: vec2(0, 0),
+            chargeCooldown: 0,
+            stompCooldown: 0,
+            summonDone: false,
+            direction: "down",
+            visualOffset: vec2(0, -10),
+            isHidden: false,
+            speed: BOSS_SPEED_PATROL,
+        },
+    ]);
+    const bossVisual = add([
+        sprite("zombieAnim", { anim: "walk-down" }),
+        pos(boss.pos.add(boss.visualOffset)),
+        anchor("center"),
+        scale(2),
+        color(210, 130, 60),
+        z(actorDepth(boss.pos.y) + 1),
+    ]);
+    bossVisual.animName = "walk-down";
+    boss.visual = bossVisual;
+
+    function bossHit() {
+        if (boss.state === "dead") return;
+        boss.hp -= 1;
+        updateBossHpBar();
+        bossVisual.color = rgb(255, 255, 255);
+        wait(0.12, () => { if (boss.exists() && bossVisual.exists()) bossVisual.color = rgb(210, 130, 60); });
+
+        // Summon minions at 2 HP
+        if (boss.hp <= 2 && !boss.summonDone) {
+            boss.summonDone = true;
+            for (let i = 0; i < 3; i++) spawnMinion(boss.pos);
+            showToast("Reforcos chegaram!", [255, 160, 60]);
+        }
+
+        if (boss.hp <= 0) {
+            boss.state = "dead";
+            if (bossVisual.exists()) { bossVisual.play("death"); bossVisual.animName = "death"; }
+            wait(1.0, () => {
+                if (!runEnded) {
+                    runEnded = true;
+                    clearProgress();
+                    playSfx("victorySfx");
+                    openFinalVictory();
+                }
+            });
+        }
+    }
+
+    function openFinalVictory() {
+        const resultOverlay = add([rect(width(), height()), pos(0,0), color(0,0,0), opacity(0.72), fixed(), z(149), "resultUI"]);
+        add([sprite("controlsPanel"), pos(width()/2, height()/2), anchor("center"), fixed(), z(150), "resultUI"]);
+        add([text("CAMPANHA CONCLUIDA", { size: 16 }), pos(width()/2, height()/2 - 64), anchor("center"), color(236, 208, 122), fixed(), z(151), "resultUI"]);
+        add([text("O chefao foi eliminado!", { size: 10 }), pos(width()/2, height()/2 - 44), anchor("center"), color(196, 173, 186), fixed(), z(151), "resultUI"]);
+        add([text(`Tempo: ${formatBattleTime(Date.now() - battleStartedAt)}`, { size: 11 }), pos(width()/2, height()/2 - 24), anchor("center"), color(224, 214, 221), fixed(), z(151), "resultUI"]);
+
+        resultOptions = [
+            { label: "Nova Operacao", action: () => { currentPhase = 1; carryOverStats = null; go("game"); } },
+            { label: "Tela inicial",  action: () => { currentPhase = 1; carryOverStats = null; go("menu"); } },
+        ];
+        resultSelection = 0;
+        resultOptions.forEach((opt, i) => {
+            const y = height()/2 + 24 + i * 28;
+            const btn = add([sprite(i===0?"menuButtonActive":"menuButton"), pos(width()/2, y), anchor("center"), fixed(), z(151), "resultUI"]);
+            const lbl = add([text(opt.label, { size: 12 }), pos(width()/2, y+1), anchor("center"), color(i===0?240:196,i===0?244:173,i===0?236:186), fixed(), z(152), "resultUI"]);
+            resultButtons.push(btn); resultLabels.push(lbl);
+        });
+    }
+
+    // ── Explosion / Bomb (copied from game scene) ──
+    function spawnExplosion(gx, gy, spriteState = { anim: "center", flipX: false, flipY: false }) {
+        const exp = add([
+            sprite("explosionAnim", { anim: spriteState.anim, flipX: spriteState.flipX, flipY: spriteState.flipY }),
+            pos(worldPos(gx, gy)), area({ shape: new Rect(vec2(-7, -7), 14, 14) }), anchor("center"), z(40), "explosion",
+        ]);
+        // Hit boss
+        if (boss.exists() && boss.state !== "dead") {
+            const bg = gridFromPos(boss.pos);
+            if (bg.x === gx && bg.y === gy) bossHit();
+        }
+        // Hit minions
+        get("minion").forEach((m) => {
+            if (m.exists() && entityOccupiesTile(m, gx, gy)) {
+                if (m.visual?.exists()) destroy(m.visual);
+                playSfx("zombieDown");
+                destroy(m);
+            }
+        });
+        if (player.exists() && entityOccupiesTile(player, gx, gy)) playerHit();
+        wait(0.45, () => { if (exp.exists()) destroy(exp); });
+    }
+
+    function explodeBomb(bomb) {
+        if (!bomb.exists()) return;
+        const { gridX, gridY, range } = bomb;
+        playSfx("explosionSfx");
+        destroy(bomb);
+        if (player.passThroughBomb === bomb) player.passThroughBomb = null;
+        spawnExplosion(gridX, gridY);
+        const dirs = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
+        dirs.forEach((dir) => {
+            for (let step = 1; step <= range; step++) {
+                const nx = gridX + dir.x * step, ny = gridY + dir.y * step;
+                if (!inBounds(nx, ny) || gameMap[ny][nx] === SOLID) break;
+                const ob = tileHasBomb(nx, ny);
+                const nx2 = nx + dir.x, ny2 = ny + dir.y;
+                const isEnd = step === range || gameMap[ny][nx] === DESTRUCTIBLE || Boolean(ob) || !inBounds(nx2,ny2) || gameMap[ny2][nx2] === SOLID;
+                spawnExplosion(nx, ny, getExplosionSpriteState(dir, isEnd));
+                if (gameMap[ny][nx] === DESTRUCTIBLE) { gameMap[ny][nx] = EMPTY; break; }
+                if (ob) { wait(0.05, () => explodeBomb(ob)); break; }
+            }
+        });
+    }
+
+    function placeBomb() {
+        if (isPaused || runEnded) return;
+        if (get("bomb").length >= maxBombs) return;
+        const { x, y } = gridFromPos(player.pos);
+        if (!inBounds(x, y) || tileHasBomb(x, y)) return;
+        const bomb = add([
+            sprite("bombAnim", { anim: "fuse" }), pos(worldPos(x, y)),
+            area({ shape: new Rect(vec2(-6,-6),12,12) }), anchor("center"), z(18), "bomb",
+            { gridX: x, gridY: y, range: firePower, phase: "fuse", fuseTimer: 2.35, totalTimer: 3.0 },
+        ]);
+        playSfx("bombPlace");
+        player.passThroughBomb = bomb;
+    }
+
+    onUpdate("bomb", (bomb) => {
+        if (isPaused) return;
+        bomb.fuseTimer -= dt(); bomb.totalTimer -= dt();
+        if (bomb.fuseTimer <= 0 && bomb.phase === "fuse") {
+            bomb.phase = "alert"; bomb.fuseTimer = Infinity; bomb.play("alert"); playSfx("bombAlert");
+        }
+        if (bomb.totalTimer <= 0) explodeBomb(bomb);
+    });
+
+    // ── Boss AI update ──
+    onUpdate("boss", (b) => {
+        if (isPaused || runEnded || b.state === "dead") return;
+
+        b.stateTimer -= dt();
+        b.chargeCooldown = Math.max(0, b.chargeCooldown - dt());
+        b.stompCooldown  = Math.max(0, b.stompCooldown  - dt());
+
+        if (b.state === "patrol") {
+            if (b.chargeCooldown <= 0 && b.stateTimer <= 0 && player.exists()) {
+                // Switch to charge
+                const dp = player.pos.sub(b.pos);
+                b.chargeDir = dp.len() > 0 ? dp.unit() : vec2(1, 0);
+                b.state = "charge";
+                b.stateTimer = 0.9;
+                b.chargeCooldown = 6;
+                b.speed = BOSS_SPEED_CHARGE;
+                showToast("CARGA!", [255, 80, 60]);
+            } else if (b.stateTimer <= 0) {
+                b.stateTimer = rand(2.5, 4.5);
+                const g = gridFromPos(b.pos);
+                const opts = [{name:"left",x:-1,y:0},{name:"right",x:1,y:0},{name:"up",x:0,y:-1},{name:"down",x:0,y:1}]
+                    .filter(d => !tileBlockedForEnemy(g.x+d.x, g.y+d.y));
+                if (opts.length > 0) {
+                    const d = choose(opts);
+                    b.direction = d.name;
+                    b.chargeDir = vec2(d.x, d.y);
+                }
+            }
+
+            const g = gridFromPos(b.pos);
+            const np = b.pos.add(b.chargeDir.scale(b.speed * dt()));
+            const ng = gridFromPos(np);
+            if ((ng.x !== g.x || ng.y !== g.y) && tileBlockedForEnemy(ng.x, ng.y)) {
+                b.stateTimer = 0; // pick new direction next frame
+            } else {
+                b.pos = np;
+            }
+
+            // Stomp check
+            if (b.stompCooldown <= 0) {
+                b.state = "stomp";
+                b.stateTimer = 0.5;
+                b.stompCooldown = 8;
+            }
+        } else if (b.state === "charge") {
+            const g = gridFromPos(b.pos);
+            const np = b.pos.add(b.chargeDir.scale(b.speed * dt()));
+            const ng = gridFromPos(np);
+            if ((ng.x !== g.x || ng.y !== g.y) && tileBlockedForEnemy(ng.x, ng.y)) {
+                b.state = "patrol";
+                b.stateTimer = rand(2.5, 4.5);
+                b.speed = BOSS_SPEED_PATROL;
+            } else {
+                b.pos = np;
+            }
+            if (b.stateTimer <= 0) {
+                b.state = "patrol";
+                b.stateTimer = rand(2.5, 4.5);
+                b.speed = BOSS_SPEED_PATROL;
+            }
+        } else if (b.state === "stomp") {
+            if (b.stateTimer <= 0) {
+                // Spawn small explosions around boss
+                const bg = gridFromPos(b.pos);
+                [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy]) => {
+                    const nx = bg.x + dx, ny = bg.y + dy;
+                    if (inBounds(nx, ny) && gameMap[ny][nx] !== SOLID) {
+                        spawnExplosion(nx, ny, { anim: "center", flipX: false, flipY: false });
+                    }
+                });
+                b.state = "patrol";
+                b.stateTimer = rand(2.5, 4.5);
+                b.speed = BOSS_SPEED_PATROL;
+                b.chargeDir = vec2(1, 0);
+            }
+        }
+
+        // Sync visual
+        if (bossVisual.exists()) {
+            bossVisual.pos = b.pos.add(b.visualOffset);
+            bossVisual.z = actorDepth(b.pos.y) + 1;
+            if (b.state !== "dead") {
+                const moving = b.state === "charge" || b.state === "patrol";
+                let an = "walk-down";
+                const cd = b.chargeDir;
+                if (Math.abs(cd.x) > Math.abs(cd.y)) { an = moving ? "walk-side" : "idle-side"; bossVisual.flipX = cd.x < 0; }
+                else if (cd.y < 0) an = moving ? "walk-up" : "idle-up";
+                else an = moving ? "walk-down" : "idle-down";
+                if (bossVisual.animName !== an) { bossVisual.play(an); bossVisual.animName = an; }
+            }
+        }
+    });
+
+    // ── Player update (boss scene) ──
+    function respawnPlayer() {
+        player.pos = worldPos(1, 1);
+        player.passThroughBomb = null;
+        player.facing = "down";
+        updateActorVisual(player, false);
+    }
+
+    function playerHit() {
+        if (isPaused || isInvincible || runEnded) return;
+        bossLives -= 1;
+        updateHearts();
+        playSfx("playerHitSfx");
+        if (bossLives <= 0) {
+            runEnded = true;
+            playSfx("failureSfx");
+            const overlay = add([rect(width(),height()), pos(0,0), color(0,0,0), opacity(0.68), fixed(), z(149), "resultUI"]);
+            add([sprite("controlsPanel"), pos(width()/2,height()/2), anchor("center"), fixed(), z(150), "resultUI"]);
+            add([text("OPERACAO FALHOU", { size: 20 }), pos(width()/2,height()/2-64), anchor("center"), color(219,76,98), fixed(), z(151), "resultUI"]);
+            add([text("Escolha sua proxima acao", { size: 10 }), pos(width()/2,height()/2-44), anchor("center"), color(196,173,186), fixed(), z(151), "resultUI"]);
+            resultOptions = [
+                { label: "Tentar de novo", action: () => { go("boss"); } },
+                { label: "Tela inicial",   action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
+            ];
+            resultSelection = 0;
+            resultOptions.forEach((opt, i) => {
+                const y = height()/2 + 14 + i * 28;
+                const btn = add([sprite(i===0?"menuButtonActive":"menuButton"), pos(width()/2,y), anchor("center"), fixed(), z(151), "resultUI"]);
+                const lbl = add([text(opt.label, { size: 12 }), pos(width()/2,y+1), anchor("center"), color(i===0?240:196,i===0?244:173,i===0?236:186), fixed(), z(152), "resultUI"]);
+                resultButtons.push(btn); resultLabels.push(lbl);
+            });
+            return;
+        }
+        isInvincible = true;
+        setActorHidden(player, true);
+        showToast("Mordida!", [219, 76, 98]);
+        wait(0.7, () => {
+            respawnPlayer(); setActorHidden(player, false);
+            let flashes = 0;
+            const blink = setInterval(() => {
+                setActorHidden(player, !player.isHidden); flashes++;
+                if (flashes >= 10) { clearInterval(blink); setActorHidden(player, false); isInvincible = false; }
+            }, 100);
+        });
+    }
+
+    player.onCollide("boss", () => playerHit());
+    player.onCollide("minion", () => playerHit());
+
+    player.onCollide("powerup", (powerup) => {
+        if (powerup.powerType === POWER_BOMB) { maxBombs += 1; showToast("+ Carga", [239,215,159]); }
+        else { firePower += 1; showToast("+ Alcance", [255,168,87]); }
+        updateStats();
+        playSfx("pickupSfx");
+        destroy(powerup);
+    });
+
+    onUpdate(() => {
+        if (virtualPausePressed) { virtualPausePressed = false; toggleBossPause(); }
+        vNavTimer -= dt();
+
+        if (isPaused) {
+            if (vNavTimer <= 0) {
+                if (vKeys.up)   { pauseSelection=(pauseSelection-1+2)%2; playSfx("uiMove"); refreshBossPause(); vNavTimer=0.22; }
+                if (vKeys.down) { pauseSelection=(pauseSelection+1)%2; playSfx("uiMove"); refreshBossPause(); vNavTimer=0.22; }
+            }
+            if (virtualBombPressed) { virtualBombPressed=false; runBossPauseSelection(); }
+            return;
+        }
+
+        if (runEnded) {
+            if (resultOptions.length > 0 && vNavTimer <= 0) {
+                if (vKeys.up)   { resultSelection=(resultSelection-1+resultOptions.length)%resultOptions.length; playSfx("uiMove"); refreshBossResult(); vNavTimer=0.22; }
+                if (vKeys.down) { resultSelection=(resultSelection+1)%resultOptions.length; playSfx("uiMove"); refreshBossResult(); vNavTimer=0.22; }
+            }
+            if (virtualBombPressed && resultOptions.length>0) { virtualBombPressed=false; playSfx("uiConfirm"); resultOptions[resultSelection].action(); }
+            return;
+        }
+
+        if (player.passThroughBomb) {
+            if (!player.passThroughBomb.exists()) { player.passThroughBomb = null; }
+            else {
+                const cg = gridFromPos(player.pos);
+                if (cg.x !== player.passThroughBomb.gridX || cg.y !== player.passThroughBomb.gridY) player.passThroughBomb = null;
+            }
+        }
+
+        let dirX = 0, dirY = 0;
+        if      (isKeyDown("left")  || isKeyDown("a") || vKeys.left)  dirX = -1;
+        else if (isKeyDown("right") || isKeyDown("d") || vKeys.right) dirX =  1;
+        else if (isKeyDown("up")    || isKeyDown("w") || vKeys.up)    dirY = -1;
+        else if (isKeyDown("down")  || isKeyDown("s") || vKeys.down)  dirY =  1;
+
+        let isMoving = false;
+        if (dirX !== 0 || dirY !== 0) {
+            if (dirX < 0) player.facing = "left";
+            else if (dirX > 0) player.facing = "right";
+            else if (dirY < 0) player.facing = "up";
+            else player.facing = "down";
+
+            const cg = gridFromPos(player.pos);
+            const nx = cg.x + dirX, ny = cg.y + dirY;
+            const bOnNext = tileHasBomb(nx, ny);
+            if (!bOnNext || player.passThroughBomb === bOnNext) {
+                player.move(dirX * player.speed, dirY * player.speed);
+                isMoving = true;
+            }
+        }
+        updateActorVisual(player, isMoving);
+        if (virtualBombPressed) { virtualBombPressed = false; placeBomb(); }
+    });
+
+    // ── Pause (boss scene) ──
+    const bossPauseOptions = [
+        { label: "Voltar para a rua", action: () => closeBossPause() },
+        { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
+    ];
+
+    function refreshBossPause() {
+        pauseButtons.forEach((btn, i) => {
+            btn.use(sprite(i===pauseSelection?"menuButtonActive":"menuButton"));
+            pauseLabels[i].color = i===pauseSelection ? rgb(240,244,236) : rgb(196,173,186);
+        });
+    }
+    function refreshBossResult() {
+        resultButtons.forEach((btn, i) => {
+            btn.use(sprite(i===resultSelection?"menuButtonActive":"menuButton"));
+            resultLabels[i].color = i===resultSelection ? rgb(240,244,236) : rgb(196,173,186);
+        });
+    }
+    function closeBossPause() {
+        isPaused = false;
+        get("pauseUI").forEach(o => destroy(o));
+        pauseButtons = []; pauseLabels = [];
+    }
+    function runBossPauseSelection() { playSfx("uiConfirm"); bossPauseOptions[pauseSelection].action(); }
+    function openBossPause() {
+        isPaused = true;
+        get("pauseUI").forEach(o => destroy(o));
+        pauseButtons = []; pauseLabels = [];
+        add([rect(width(),height()), pos(0,0), color(0,0,0), opacity(0.62), fixed(), z(130), "pauseUI"]);
+        add([sprite("pausePanel"), pos(width()/2,height()/2), anchor("center"), fixed(), z(131), "pauseUI"]);
+        add([text("OPERACAO PAUSADA", { size: 18 }), pos(width()/2,height()/2-56), anchor("center"), color(236,208,122), fixed(), z(132), "pauseUI"]);
+        pauseSelection = 0;
+        bossPauseOptions.forEach((opt, i) => {
+            const y = height()/2 - 10 + i * 34;
+            const btn = add([sprite(i===0?"menuButtonActive":"menuButton"), pos(width()/2,y), anchor("center"), fixed(), z(132), "pauseUI"]);
+            const lbl = add([text(opt.label, { size: 12 }), pos(width()/2,y+1), anchor("center"), color(i===0?240:196,i===0?244:173,i===0?236:186), fixed(), z(133), "pauseUI"]);
+            pauseButtons.push(btn); pauseLabels.push(lbl);
+        });
+    }
+    function toggleBossPause() {
+        if (isPaused) { playSfx("pauseToggle"); closeBossPause(); }
+        else { playSfx("pauseToggle"); openBossPause(); }
+    }
+
+    onKeyPress("space", placeBomb); onKeyPress("z", placeBomb); onKeyPress("x", placeBomb);
+    onKeyPress("escape", toggleBossPause); onKeyPress("p", toggleBossPause);
+    onKeyPress("t", toggleMute);
+    onKeyPress("up", () => {
+        if (isPaused) { pauseSelection=(pauseSelection-1+bossPauseOptions.length)%bossPauseOptions.length; playSfx("uiMove"); refreshBossPause(); return; }
+        if (runEnded && resultOptions.length>0) { resultSelection=(resultSelection-1+resultOptions.length)%resultOptions.length; playSfx("uiMove"); refreshBossResult(); }
+    });
+    onKeyPress("down", () => {
+        if (isPaused) { pauseSelection=(pauseSelection+1)%bossPauseOptions.length; playSfx("uiMove"); refreshBossPause(); return; }
+        if (runEnded && resultOptions.length>0) { resultSelection=(resultSelection+1)%resultOptions.length; playSfx("uiMove"); refreshBossResult(); }
+    });
+    onKeyPress("enter", () => {
+        if (isPaused) { runBossPauseSelection(); return; }
+        if (runEnded && resultOptions.length>0) { playSfx("uiConfirm"); resultOptions[resultSelection].action(); }
+    });
+
+    updateHearts();
+    updateStats();
+    updateBossHpBar();
 });
 
 go("menu");

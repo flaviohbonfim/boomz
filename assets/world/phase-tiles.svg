@@ -1,0 +1,310 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="64" viewBox="0 0 48 64" shape-rendering="crispEdges">
+
+  <!-- ══════════════════════════════════════
+       ROW 0  —  FASE 2: HOSPITAL
+       floor2 (0,0)  wall2 (16,0)  box2 (32,0)
+  ══════════════════════════════════════ -->
+
+  <!-- floor2: clinical white tile with grout lines -->
+  <g transform="translate(0 0)">
+    <rect width="16" height="16" fill="#7a9a8c"/>
+    <rect x="1" y="1" width="14" height="14" fill="#b8ccc4"/>
+    <rect x="2" y="2" width="12" height="12" fill="#ccdcd6"/>
+    <!-- horizontal grout -->
+    <rect x="2" y="8" width="12" height="1" fill="#8aaa9e"/>
+    <!-- vertical grout -->
+    <rect x="8" y="2" width="1" height="12" fill="#8aaa9e"/>
+    <!-- tile highlights -->
+    <rect x="3" y="3" width="4" height="4" fill="#d8e8e0"/>
+    <rect x="9" y="3" width="4" height="4" fill="#d4e4dc"/>
+    <rect x="3" y="9" width="4" height="4" fill="#d0e0d8"/>
+    <rect x="9" y="9" width="4" height="4" fill="#d6e6de"/>
+    <!-- small green cross in one quadrant -->
+    <rect x="5" y="4" width="1" height="3" fill="#3a9060" fill-opacity="0.55"/>
+    <rect x="4" y="5" width="3" height="1" fill="#3a9060" fill-opacity="0.55"/>
+  </g>
+
+  <!-- wall2: white hospital wall with green accent band -->
+  <g transform="translate(16 0)">
+    <rect width="16" height="16" fill="#0a1210"/>
+    <rect x="1" y="1" width="14" height="14" fill="#b0c0b8"/>
+    <rect x="1" y="1" width="14" height="2" fill="#d8e4de"/>
+    <rect x="1" y="3" width="14" height="1" fill="#8aaa9e"/>
+    <!-- green accent band -->
+    <rect x="1" y="6" width="14" height="3" fill="#2a8050"/>
+    <rect x="1" y="6" width="14" height="1" fill="#3a9860"/>
+    <rect x="1" y="8" width="14" height="1" fill="#1a6038"/>
+    <!-- lower wall -->
+    <rect x="1" y="9"  width="14" height="1" fill="#8aaa9e"/>
+    <rect x="1" y="10" width="14" height="4" fill="#b8c8c0"/>
+    <rect x="1" y="14" width="14" height="1" fill="#789088"/>
+    <!-- highlight detail -->
+    <rect x="3" y="10" width="2" height="3" fill="#c8d8d0"/>
+    <rect x="10" y="10" width="2" height="3" fill="#c8d8d0"/>
+  </g>
+
+  <!-- box2: medical supply crate with red cross -->
+  <g transform="translate(32 0)">
+    <rect x="2" y="12" width="12" height="2" fill="#101818" fill-opacity="0.70"/>
+    <!-- top face -->
+    <rect x="2" y="2" width="12" height="4" fill="#c8d8d2"/>
+    <rect x="2" y="2" width="12" height="1" fill="#dce8e4"/>
+    <!-- front face -->
+    <rect x="2" y="6" width="12" height="8" fill="#a8bcb4"/>
+    <rect x="2" y="6" width="12" height="1" fill="#b8ccc6"/>
+    <rect x="2" y="13" width="12" height="1" fill="#788c84"/>
+    <!-- side shading -->
+    <rect x="13" y="6" width="1" height="8" fill="#8aa09a"/>
+    <rect x="2" y="6" width="1" height="8" fill="#b8ccc6"/>
+    <!-- red cross -->
+    <rect x="7" y="7"  width="2" height="6" fill="#cc2832"/>
+    <rect x="5" y="9"  width="6" height="2" fill="#cc2832"/>
+    <rect x="7" y="7"  width="2" height="1" fill="#e84050"/>
+    <!-- outline -->
+    <rect x="2" y="2" width="1" height="12" fill="#506058"/>
+    <rect x="13" y="2" width="1" height="12" fill="#3a4a44"/>
+    <rect x="2" y="2" width="12" height="1" fill="#506058"/>
+  </g>
+
+  <!-- ══════════════════════════════════════
+       ROW 16  —  FASE 3: SHOPPING / MALL
+       floor3 (0,16)  wall3 (16,16)  box3 (32,16)
+  ══════════════════════════════════════ -->
+
+  <!-- floor3: polished mall floor, warm beige checkerboard -->
+  <g transform="translate(0 16)">
+    <rect width="16" height="16" fill="#7a7060"/>
+    <rect x="1" y="1" width="14" height="14" fill="#c4b090"/>
+    <!-- checkerboard tiles: 2 light, 2 dark -->
+    <rect x="2" y="2" width="6" height="6" fill="#d8c8a0"/>
+    <rect x="8" y="2" width="6" height="6" fill="#c0aa80"/>
+    <rect x="2" y="8" width="6" height="6" fill="#bcac82"/>
+    <rect x="8" y="8" width="6" height="6" fill="#d4c49c"/>
+    <!-- grout lines -->
+    <rect x="2" y="8" width="12" height="1" fill="#7a7060"/>
+    <rect x="8" y="2" width="1" height="12" fill="#7a7060"/>
+    <!-- polish highlights -->
+    <rect x="3" y="3" width="2" height="1" fill="#e8dcc0" fill-opacity="0.80"/>
+    <rect x="9" y="3" width="2" height="1" fill="#c8bc98" fill-opacity="0.80"/>
+    <rect x="3" y="9" width="2" height="1" fill="#ccc098" fill-opacity="0.80"/>
+    <rect x="9" y="9" width="2" height="1" fill="#e4d8b4" fill-opacity="0.80"/>
+  </g>
+
+  <!-- wall3: shopping mall glass/steel facade -->
+  <g transform="translate(16 16)">
+    <rect width="16" height="16" fill="#080c10"/>
+    <rect x="1" y="1" width="14" height="14" fill="#1e2c38"/>
+    <rect x="1" y="1" width="14" height="2" fill="#4a6070"/>
+    <rect x="1" y="3" width="14" height="1" fill="#0e181e"/>
+    <!-- glass panels -->
+    <rect x="2" y="4" width="5" height="8" fill="#243240"/>
+    <rect x="9" y="4" width="5" height="8" fill="#243240"/>
+    <!-- glass reflection lines -->
+    <rect x="3" y="5" width="1" height="6" fill="#4080a0" fill-opacity="0.70"/>
+    <rect x="10" y="5" width="1" height="6" fill="#4080a0" fill-opacity="0.70"/>
+    <rect x="4" y="5" width="2" height="3" fill="#5090b0" fill-opacity="0.45"/>
+    <rect x="11" y="5" width="2" height="3" fill="#5090b0" fill-opacity="0.45"/>
+    <!-- frame divider -->
+    <rect x="7" y="4" width="2" height="8" fill="#1a2830"/>
+    <!-- chrome trim -->
+    <rect x="1" y="12" width="14" height="1" fill="#506070"/>
+    <rect x="1" y="13" width="14" height="1" fill="#2e3e4c"/>
+    <rect x="1" y="14" width="14" height="1" fill="#18242e"/>
+    <!-- neon accent at bottom -->
+    <rect x="2" y="13" width="12" height="1" fill="#60b0d8" fill-opacity="0.50"/>
+  </g>
+
+  <!-- box3: bright retail display box -->
+  <g transform="translate(32 16)">
+    <rect x="2" y="12" width="12" height="2" fill="#0a0c10" fill-opacity="0.65"/>
+    <!-- top face: teal/cyan -->
+    <rect x="2" y="2" width="12" height="4" fill="#38a8c0"/>
+    <rect x="2" y="2" width="12" height="1" fill="#50c0d8"/>
+    <!-- front face: darker teal -->
+    <rect x="2" y="6" width="12" height="8" fill="#207888"/>
+    <rect x="2" y="6" width="12" height="1" fill="#30909e"/>
+    <rect x="2" y="13" width="12" height="1" fill="#105868"/>
+    <!-- side shading -->
+    <rect x="13" y="6" width="1" height="8" fill="#106070"/>
+    <rect x="2"  y="6" width="1" height="8" fill="#38a0b0"/>
+    <!-- yellow label stripe -->
+    <rect x="3" y="8"  width="10" height="3" fill="#e0b820"/>
+    <rect x="3" y="8"  width="10" height="1" fill="#f0d040"/>
+    <!-- small star on label -->
+    <rect x="6" y="9"  width="1" height="1" fill="#ffe060"/>
+    <rect x="8" y="9"  width="1" height="1" fill="#ffe060"/>
+    <!-- outline -->
+    <rect x="2" y="2"  width="1" height="12" fill="#104858"/>
+    <rect x="13" y="2" width="1" height="12" fill="#0a3040"/>
+    <rect x="2" y="2"  width="12" height="1" fill="#104858"/>
+  </g>
+
+  <!-- ══════════════════════════════════════
+       ROW 32  —  FASE 4: LABORATORIO
+       floor4 (0,32)  wall4 (16,32)  box4 (32,32)
+  ══════════════════════════════════════ -->
+
+  <!-- floor4: light grey lab tile floor with grout lines -->
+  <g transform="translate(0 32)">
+    <rect width="16" height="16" fill="#5a6068"/>
+    <rect x="1" y="1" width="14" height="14" fill="#8a9298"/>
+    <rect x="2" y="2" width="6"  height="6"  fill="#9aa2a8"/>
+    <rect x="9" y="2" width="5"  height="6"  fill="#929aa0"/>
+    <rect x="2" y="9" width="6"  height="5"  fill="#8e969c"/>
+    <rect x="9" y="9" width="5"  height="5"  fill="#96a0a6"/>
+    <!-- grout lines -->
+    <rect x="2" y="8"  width="12" height="1" fill="#5a6068"/>
+    <rect x="8" y="2"  width="1"  height="12" fill="#5a6068"/>
+    <!-- tile highlights -->
+    <rect x="3"  y="3"  width="3" height="1" fill="#b0b8be" fill-opacity="0.80"/>
+    <rect x="10" y="3"  width="3" height="1" fill="#a8b0b6" fill-opacity="0.80"/>
+    <!-- cyan biohazard dot accent -->
+    <rect x="5"  y="4"  width="1" height="1" fill="#00c8e0" fill-opacity="0.70"/>
+    <rect x="11" y="10" width="1" height="1" fill="#00c8e0" fill-opacity="0.60"/>
+  </g>
+
+  <!-- wall4: dark reinforced lab wall with bright circuit traces -->
+  <g transform="translate(16 32)">
+    <rect width="16" height="16" fill="#06080a"/>
+    <rect x="1" y="1" width="14" height="14" fill="#0e1620"/>
+    <rect x="1" y="1" width="14" height="2"  fill="#182436"/>
+    <rect x="1" y="3" width="14" height="1"  fill="#080e16"/>
+    <!-- dark panel base -->
+    <rect x="1" y="4"  width="14" height="9"  fill="#101c2c"/>
+    <!-- bright green circuit traces (clearly visible) -->
+    <rect x="2"  y="5"  width="12" height="1" fill="#00d860"/>
+    <rect x="12" y="5"  width="1"  height="5" fill="#00d860"/>
+    <rect x="2"  y="5"  width="1"  height="4" fill="#00b850"/>
+    <rect x="2"  y="9"  width="10" height="1" fill="#00b850"/>
+    <rect x="6"  y="6"  width="1"  height="3" fill="#009840"/>
+    <!-- bright cyan LED indicator -->
+    <rect x="7"  y="10" width="2"  height="2" fill="#00e8ff"/>
+    <rect x="7"  y="10" width="2"  height="1" fill="#80ffff"/>
+    <!-- status dots -->
+    <rect x="3"  y="12" width="2"  height="1" fill="#00e840"/>
+    <rect x="11" y="12" width="2"  height="1" fill="#ff3020"/>
+    <!-- bottom bar -->
+    <rect x="1"  y="13" width="14" height="2" fill="#0c1828"/>
+    <rect x="1"  y="13" width="14" height="1" fill="#00c8e0" fill-opacity="0.30"/>
+  </g>
+
+  <!-- box4: bright yellow biohazard crate -->
+  <g transform="translate(32 32)">
+    <rect x="2" y="12" width="12" height="2" fill="#080600" fill-opacity="0.75"/>
+    <!-- top face: vivid yellow -->
+    <rect x="2" y="2" width="12" height="4" fill="#e8c000"/>
+    <rect x="2" y="2" width="12" height="1" fill="#ffe840"/>
+    <!-- front face: darker yellow-orange -->
+    <rect x="2" y="6" width="12" height="8" fill="#c89000"/>
+    <rect x="2" y="6" width="12" height="1" fill="#daa800"/>
+    <rect x="2" y="13" width="12" height="1" fill="#806000"/>
+    <!-- side shading -->
+    <rect x="13" y="6" width="1" height="8" fill="#906800"/>
+    <rect x="2"  y="6" width="1" height="8" fill="#e0aa00"/>
+    <!-- black hazard stripe band -->
+    <rect x="3"  y="8"  width="10" height="4" fill="#181000"/>
+    <!-- yellow stripes inside band -->
+    <rect x="4"  y="8"  width="2"  height="4" fill="#d8a800"/>
+    <rect x="8"  y="8"  width="2"  height="4" fill="#d8a800"/>
+    <rect x="4"  y="8"  width="2"  height="1" fill="#f0c000"/>
+    <rect x="8"  y="8"  width="2"  height="1" fill="#f0c000"/>
+    <!-- biohazard circle outline (simplified) -->
+    <rect x="11" y="9"  width="2"  height="2" fill="#e8c000"/>
+    <rect x="12" y="9"  width="1"  height="2" fill="#181000"/>
+    <!-- outline -->
+    <rect x="2"  y="2"  width="1"  height="12" fill="#604800"/>
+    <rect x="13" y="2"  width="1"  height="12" fill="#503800"/>
+    <rect x="2"  y="2"  width="12" height="1"  fill="#604800"/>
+  </g>
+
+  <!-- ══════════════════════════════════════
+       ROW 48  —  FASE 5: BUNKER
+       floor5 (0,48)  wall5 (16,48)  box5 (32,48)
+  ══════════════════════════════════════ -->
+
+  <!-- floor5: dark concrete with cracks -->
+  <g transform="translate(0 48)">
+    <rect width="16" height="16" fill="#0a0a08"/>
+    <rect x="1" y="1" width="14" height="14" fill="#151412"/>
+    <rect x="2" y="2" width="12" height="12" fill="#1c1a18"/>
+    <!-- mortar line -->
+    <rect x="2" y="9" width="12" height="1" fill="#0e0d0c"/>
+    <rect x="9" y="2" width="1" height="12" fill="#0e0d0c"/>
+    <!-- concrete quadrants -->
+    <rect x="3" y="3" width="5" height="5" fill="#201e1c"/>
+    <rect x="10" y="3" width="4" height="5" fill="#1e1c1a"/>
+    <rect x="3" y="10" width="5" height="4" fill="#1a1918"/>
+    <rect x="10" y="10" width="4" height="4" fill="#222020"/>
+    <!-- cracks -->
+    <rect x="5"  y="4"  width="1" height="3" fill="#0c0b0a"/>
+    <rect x="5"  y="6"  width="2" height="1" fill="#0c0b0a"/>
+    <rect x="11" y="11" width="1" height="2" fill="#0c0b0a"/>
+    <rect x="4"  y="11" width="3" height="1" fill="#0c0b0a"/>
+    <!-- worn highlight -->
+    <rect x="3" y="3" width="2" height="1" fill="#2e2c2a" fill-opacity="0.60"/>
+    <rect x="10" y="10" width="2" height="1" fill="#2e2c2a" fill-opacity="0.60"/>
+  </g>
+
+  <!-- wall5: reinforced bunker wall with metal straps -->
+  <g transform="translate(16 48)">
+    <rect width="16" height="16" fill="#060605"/>
+    <rect x="1" y="1" width="14" height="14" fill="#1a1816"/>
+    <rect x="1" y="1" width="14" height="2" fill="#282624"/>
+    <rect x="1" y="3" width="14" height="1" fill="#0e0d0c"/>
+    <!-- concrete block rows -->
+    <rect x="1" y="4" width="14" height="4" fill="#1e1c1a"/>
+    <rect x="1" y="8" width="14" height="1" fill="#0e0d0c"/>
+    <rect x="1" y="9" width="14" height="4" fill="#201e1c"/>
+    <rect x="1" y="13" width="14" height="1" fill="#0e0d0c"/>
+    <!-- vertical mortar joints -->
+    <rect x="7"  y="4" width="1" height="4" fill="#0e0d0c"/>
+    <rect x="4"  y="9" width="1" height="4" fill="#0e0d0c"/>
+    <rect x="11" y="9" width="1" height="4" fill="#0e0d0c"/>
+    <!-- metal strap (horizontal) -->
+    <rect x="1" y="7"  width="14" height="2" fill="#2a2826"/>
+    <rect x="1" y="7"  width="14" height="1" fill="#383634"/>
+    <!-- bolt details on strap -->
+    <rect x="2"  y="7" width="1" height="2" fill="#484442"/>
+    <rect x="7"  y="7" width="1" height="2" fill="#484442"/>
+    <rect x="13" y="7" width="1" height="2" fill="#484442"/>
+    <!-- emergency orange strip top -->
+    <rect x="1" y="1" width="14" height="1" fill="#c83818" fill-opacity="0.55"/>
+  </g>
+
+  <!-- box5: military ammo crate, dark olive -->
+  <g transform="translate(32 48)">
+    <rect x="2" y="12" width="12" height="2" fill="#060606" fill-opacity="0.70"/>
+    <!-- top face: olive -->
+    <rect x="2" y="2" width="12" height="4" fill="#424830"/>
+    <rect x="2" y="2" width="12" height="1" fill="#525c38"/>
+    <!-- front face: dark olive -->
+    <rect x="2" y="6" width="12" height="8" fill="#303824"/>
+    <rect x="2" y="6" width="12" height="1" fill="#3e4828"/>
+    <rect x="2" y="13" width="12" height="1" fill="#1e2414"/>
+    <!-- side shading -->
+    <rect x="13" y="6" width="1" height="8" fill="#20280c"/>
+    <rect x="2"  y="6" width="1" height="8" fill="#424e30"/>
+    <!-- stencil marking: "AMMO" approximated -->
+    <rect x="4"  y="7" width="2" height="5" fill="#4e5a38"/>
+    <rect x="4"  y="7" width="2" height="1" fill="#606c48"/>
+    <rect x="4"  y="11" width="2" height="1" fill="#606c48"/>
+    <rect x="4"  y="9" width="2" height="1" fill="#606c48"/>
+    <rect x="7"  y="7" width="2" height="5" fill="#4e5a38"/>
+    <rect x="7"  y="7" width="2" height="1" fill="#606c48"/>
+    <rect x="10" y="7" width="2" height="5" fill="#4e5a38"/>
+    <rect x="10" y="7" width="2" height="1" fill="#606c48"/>
+    <rect x="10" y="11" width="2" height="1" fill="#606c48"/>
+    <!-- metal corner brackets -->
+    <rect x="2"  y="2"  width="3" height="1" fill="#606858"/>
+    <rect x="11" y="2"  width="3" height="1" fill="#606858"/>
+    <rect x="2"  y="2"  width="1" height="4" fill="#606858"/>
+    <rect x="13" y="2"  width="1" height="4" fill="#505848"/>
+    <!-- bottom edge metal -->
+    <rect x="2"  y="13" width="12" height="1" fill="#484e38"/>
+    <!-- outline -->
+    <rect x="2" y="2"  width="1"  height="12" fill="#282e1c"/>
+    <rect x="13" y="2" width="1"  height="12" fill="#1c2010"/>
+    <rect x="2" y="2"  width="12" height="1"  fill="#282e1c"/>
+  </g>
+
+</svg>
