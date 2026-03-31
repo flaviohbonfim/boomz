@@ -2750,8 +2750,8 @@ scene("boss", () => {
         bossVisual.color = rgb(255, 255, 255);
         wait(0.12, () => { if (boss.exists() && bossVisual.exists()) bossVisual.color = rgb(210, 130, 60); });
 
-        // Summon minions at 2 HP
-        if (boss.hp <= 2 && !boss.summonDone) {
+        // Summon minions at ~40% HP
+        if (boss.hp <= Math.ceil(BOSS_MAX_HP * 0.4) && !boss.summonDone) {
             boss.summonDone = true;
             for (let i = 0; i < 3; i++) spawnMinion(boss.pos);
             showToast("Reforcos chegaram!", [255, 160, 60]);
