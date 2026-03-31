@@ -386,6 +386,7 @@ const audioStatusBindings = [];
 // ── Phase progression globals ──
 let currentPhase = 1;
 let carryOverStats = null; // { lives, maxBombs, firePower } carried between phases
+let campaignElapsedMs = 0; // total time passed to ending scene
 
 const ZOMBIE_TYPES = {
     normal: { speed: 42, hp: 1, tint: [255, 255, 255] },
@@ -432,14 +433,91 @@ const PHASES = [
     },
 ];
 
-function saveProgress(phase, lives, maxBombs, firePower) {
-    try { localStorage.setItem("boomz_save", JSON.stringify({ phase, lives, maxBombs, firePower })); } catch {}
+let activeSlot = 1;
+function saveSlot(slot, phase, lives, maxBombs, firePower) {
+    try { localStorage.setItem(`boomz_save_${slot}`, JSON.stringify({ phase, lives, maxBombs, firePower, difficulty: selectedDifficulty, ts: Date.now() })); } catch {}
 }
-function loadProgress() {
-    try { const raw = localStorage.getItem("boomz_save"); return raw ? JSON.parse(raw) : null; } catch { return null; }
+function loadSlot(slot) {
+    try { const r = localStorage.getItem(`boomz_save_${slot}`); return r ? JSON.parse(r) : null; } catch { return null; }
 }
-function clearProgress() {
-    try { localStorage.removeItem("boomz_save"); } catch {}
+function clearSlot(slot) {
+    try { localStorage.removeItem(`boomz_save_${slot}`); } catch {}
+}
+function getAllSlots() { return [1, 2, 3].map(i => loadSlot(i)); }
+function saveProgress(phase, lives, maxBombs, firePower) { saveSlot(activeSlot, phase, lives, maxBombs, firePower); }
+function loadProgress() { return loadSlot(activeSlot); }
+function clearProgress() { clearSlot(activeSlot); }
+
+// ── Slot picker state (driven by scene handlers, no dynamic onKeyPress) ──
+let _picker = null;
+
+function openSlotPicker(mode, onSelect) {
+    const slots = getAllSlots();
+    if (mode === "load" && slots.every(s => s === null)) return;
+
+    const sel0 = mode === "load" ? Math.max(0, slots.findIndex(s => s !== null)) : 0;
+
+    function slotLabel(i) {
+        const d = slots[i];
+        if (!d) return `SLOT ${i + 1}   VAZIO`;
+        const date = new Date(d.ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+        return `SLOT ${i + 1}   Fase ${d.phase}   ${DIFFICULTIES[d.difficulty]?.label ?? "MEDIO"}   ${date}`;
+    }
+
+    add([rect(width(), height()), pos(0, 0), color(0, 0, 0), opacity(0.78), fixed(), z(145), "slotPickerUI"]);
+    add([sprite("controlsPanel"), pos(width() / 2, height() / 2), anchor("center"), fixed(), z(146), "slotPickerUI"]);
+    add([text(mode === "save" ? "SALVAR JOGO" : "CARREGAR JOGO", { size: 14 }), pos(width() / 2, height() / 2 - 68), anchor("center"), color(236, 208, 122), fixed(), z(147), "slotPickerUI"]);
+    add([text("setas + Enter   /   ESC para fechar", { size: 8 }), pos(width() / 2, height() / 2 - 50), anchor("center"), color(160, 172, 168), fixed(), z(147), "slotPickerUI"]);
+
+    const btns = [], lbls = [];
+    for (let i = 0; i < 3; i++) {
+        const y = height() / 2 - 10 + i * 32;
+        const inactive = mode === "load" && slots[i] === null;
+        btns.push(add([sprite("menuButton"), pos(width() / 2, y), anchor("center"), fixed(), z(147), "slotPickerUI"]));
+        lbls.push(add([text(slotLabel(i), { size: 9 }), pos(width() / 2, y + 1), anchor("center"), color(inactive ? 90 : 196, inactive ? 90 : 173, inactive ? 90 : 186), fixed(), z(148), "slotPickerUI"]));
+    }
+
+    function refresh(sel) {
+        for (let i = 0; i < 3; i++) {
+            const inactive = mode === "load" && slots[i] === null;
+            btns[i].use(sprite(i === sel && !inactive ? "menuButtonActive" : "menuButton"));
+            lbls[i].color = inactive ? rgb(90, 90, 90) : (i === sel ? rgb(240, 244, 236) : rgb(196, 173, 186));
+        }
+    }
+
+    _picker = { mode, slots, sel: sel0, onSelect, refresh,
+        nextValid(dir) {
+            let n = this.sel;
+            for (let t = 0; t < 3; t++) {
+                n = (n + dir + 3) % 3;
+                if (this.mode !== "load" || this.slots[n] !== null) return n;
+            }
+            return this.sel;
+        }
+    };
+    refresh(sel0);
+    isSlotPickerOpen = true;
+}
+
+function _pickerMove(dir) {
+    if (!_picker) return;
+    _picker.sel = _picker.nextValid(dir);
+    playSfx("uiMove");
+    _picker.refresh(_picker.sel);
+}
+function _pickerConfirm() {
+    if (!_picker) return;
+    if (_picker.mode === "load" && _picker.slots[_picker.sel] === null) return;
+    playSfx("uiConfirm");
+    const sel = _picker.sel, data = _picker.slots[sel], cb = _picker.onSelect;
+    _pickerClose();
+    cb(sel + 1, data);
+}
+function _pickerClose() {
+    if (!_picker) return;
+    isSlotPickerOpen = false;
+    _picker = null;
+    get("slotPickerUI").forEach(o => destroy(o));
 }
 
 const SOLID = 1;
@@ -455,6 +533,7 @@ const DIFFICULTIES = {
     hard:   { label: "DIFICIL", playerSpeed: 108, zombieSpeedMult: 1.22, powerupChance: 0.38, boxDensity: 0.28, lifeChance: 0.04, startBombs: 1, startFire: 2 },
 };
 let selectedDifficulty = "medium";
+let isSlotPickerOpen = false;
 
 const PLAYER_ANIMS = {
     "idle-down": { from: 0, to: 1, speed: 4, loop: true },
@@ -855,10 +934,9 @@ scene("menu", () => {
 
     configureChase(0);
 
-    const savedData = loadProgress();
     const options = [];
-    if (savedData && savedData.phase > 1) {
-        options.push({ label: `CONTINUAR FASE ${savedData.phase}`, isContinue: true, savedData });
+    if (getAllSlots().some(s => s !== null)) {
+        options.push({ label: "CARREGAR JOGO", isLoad: true });
     }
     options.push({ label: "NOVA OPERACAO", isNewGame: true });
     options.push({ label: () => `DIFICULDADE: ${DIFFICULTIES[selectedDifficulty].label}`, isDiffToggle: true });
@@ -989,31 +1067,44 @@ scene("menu", () => {
             return;
         }
         playSfx("uiConfirm");
-        if (opt.isContinue) {
-            const s = opt.savedData;
-            currentPhase = s.phase;
-            carryOverStats = { lives: s.lives, maxBombs: s.maxBombs, firePower: s.firePower };
-            go("game");
+        if (opt.isLoad) {
+            openSlotPicker("load", (slot, data) => {
+                activeSlot = slot;
+                selectedDifficulty = data.difficulty || "medium";
+                currentPhase = data.phase;
+                carryOverStats = { lives: data.lives, maxBombs: data.maxBombs, firePower: data.firePower };
+                go("game");
+            });
             return;
         }
         if (opt.isNewGame) {
             currentPhase = 1;
             carryOverStats = null;
-            clearProgress();
             go("game");
             return;
         }
         go(opt.target);
     }
 
-    onKeyPress("up",    menuUp);
-    onKeyPress("down",  menuDown);
-    onKeyPress("enter", menuConfirm);
+    onKeyPress("up",     () => { if (isSlotPickerOpen) { _pickerMove(-1); return; } menuUp(); });
+    onKeyPress("down",   () => { if (isSlotPickerOpen) { _pickerMove(1);  return; } menuDown(); });
+    onKeyPress("enter",  () => { if (isSlotPickerOpen) { _pickerConfirm(); return; } menuConfirm(); });
+    onKeyPress("escape", () => { if (isSlotPickerOpen) { playSfx("uiBack"); _pickerClose(); return; } });
+    onKeyPress("x",      () => { if (isSlotPickerOpen) { playSfx("uiBack"); _pickerClose(); return; } });
 
     // Virtual controls: D-pad navigates, X confirms, START ignored
     let vNavTimer = 0;
     onUpdate(() => {
         vNavTimer -= dt();
+        if (isSlotPickerOpen) {
+            if (vNavTimer <= 0) {
+                if (vKeys.up)   { _pickerMove(-1); vNavTimer = 0.22; }
+                if (vKeys.down) { _pickerMove(1);  vNavTimer = 0.22; }
+            }
+            if (virtualBombPressed)  { virtualBombPressed  = false; _pickerConfirm(); }
+            if (virtualPausePressed) { virtualPausePressed = false; playSfx("uiBack"); _pickerClose(); }
+            return;
+        }
         if (vNavTimer <= 0) {
             if (vKeys.up)   { menuUp();   vNavTimer = 0.22; }
             if (vKeys.down) { menuDown(); vNavTimer = 0.22; }
@@ -1164,7 +1255,15 @@ scene("game", () => {
     const pauseOptions = [
         { label: "Voltar para a rua", action: () => closePause() },
         { label: "Recomecar varredura", action: () => go("game") },
-        { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
+        { label: "Salvar jogo", action: () => {
+            openSlotPicker("save", (slot) => {
+                activeSlot = slot;
+                saveProgress(currentPhase, lives, maxBombs, firePower);
+                showToast("Jogo salvo!", [100, 220, 140]);
+                closePause();
+            });
+        }},
+        { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; go("menu"); } },
         { label: () => audioMuted ? "Som: OFF" : "Som: ON", action: () => { toggleMute(); refreshPauseMenu(); } },
     ];
 
@@ -1411,8 +1510,8 @@ scene("game", () => {
         clearResultUI();
 
         resultOptions = customOptions || [
-            { label: "Tentar de novo", action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("game"); } },
-            { label: "Tela inicial",   action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
+            { label: "Tentar de novo", action: () => { currentPhase = 1; carryOverStats = null; go("game"); } },
+            { label: "Tela inicial",   action: () => { currentPhase = 1; carryOverStats = null; go("menu"); } },
         ];
 
         const hasStats = statLines.length > 0;
@@ -1779,9 +1878,17 @@ scene("game", () => {
     }
 
     onUpdate(() => {
-        if (virtualPausePressed) { virtualPausePressed = false; togglePause(); }
-
         vNavTimer -= dt();
+        if (isSlotPickerOpen) {
+            if (vNavTimer <= 0) {
+                if (vKeys.up)   { _pickerMove(-1); vNavTimer = 0.22; }
+                if (vKeys.down) { _pickerMove(1);  vNavTimer = 0.22; }
+            }
+            if (virtualBombPressed)  { virtualBombPressed  = false; _pickerConfirm(); }
+            if (virtualPausePressed) { virtualPausePressed = false; playSfx("uiBack"); _pickerClose(); }
+            return;
+        }
+        if (virtualPausePressed) { virtualPausePressed = false; togglePause(); }
 
         if (isPaused) {
             if (vNavTimer <= 0) {
@@ -2059,7 +2166,7 @@ scene("game", () => {
                         carryOverStats = { lives, maxBombs, firePower };
                         go("game");
                     }},
-                    { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
+                    { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; go("menu"); } },
                 ]
             );
         } else {
@@ -2070,7 +2177,7 @@ scene("game", () => {
                         carryOverStats = { lives, maxBombs, firePower };
                         go("boss");
                     }},
-                    { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
+                    { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; go("menu"); } },
                 ]
             );
         }
@@ -2187,8 +2294,10 @@ scene("game", () => {
         ]);
 
         pauseSelection = 0;
+        const _pSpacing = pauseOptions.length <= 4 ? 30 : 24;
+        const _pStartY  = height() / 2 - (pauseOptions.length <= 4 ? 38 : 48);
         pauseOptions.forEach((option, index) => {
-            const y = height() / 2 - 34 + index * 32;
+            const y = _pStartY + index * _pSpacing;
             const button = add([
                 sprite(index === 0 ? "menuButtonActive" : "menuButton"),
                 pos(width() / 2, y),
@@ -2228,45 +2337,28 @@ scene("game", () => {
 
     onKeyPress("space", placeBomb);
     onKeyPress("z", placeBomb);
-    onKeyPress("x", placeBomb);
     onKeyPress("up", () => {
-        if (isPaused) {
-            pauseSelection = (pauseSelection - 1 + pauseOptions.length) % pauseOptions.length;
-            playSfx("uiMove");
-            refreshPauseMenu();
-            return;
-        }
-        if (runEnded && resultOptions.length > 0) {
-            resultSelection = (resultSelection - 1 + resultOptions.length) % resultOptions.length;
-            playSfx("uiMove");
-            refreshResultMenu();
-        }
+        if (isSlotPickerOpen) { _pickerMove(-1); return; }
+        if (isPaused) { pauseSelection = (pauseSelection - 1 + pauseOptions.length) % pauseOptions.length; playSfx("uiMove"); refreshPauseMenu(); return; }
+        if (runEnded && resultOptions.length > 0) { resultSelection = (resultSelection - 1 + resultOptions.length) % resultOptions.length; playSfx("uiMove"); refreshResultMenu(); }
     });
     onKeyPress("down", () => {
-        if (isPaused) {
-            pauseSelection = (pauseSelection + 1) % pauseOptions.length;
-            playSfx("uiMove");
-            refreshPauseMenu();
-            return;
-        }
-        if (runEnded && resultOptions.length > 0) {
-            resultSelection = (resultSelection + 1) % resultOptions.length;
-            playSfx("uiMove");
-            refreshResultMenu();
-        }
+        if (isSlotPickerOpen) { _pickerMove(1); return; }
+        if (isPaused) { pauseSelection = (pauseSelection + 1) % pauseOptions.length; playSfx("uiMove"); refreshPauseMenu(); return; }
+        if (runEnded && resultOptions.length > 0) { resultSelection = (resultSelection + 1) % resultOptions.length; playSfx("uiMove"); refreshResultMenu(); }
     });
     onKeyPress("enter", () => {
-        if (isPaused) {
-            runPauseSelection();
-            return;
-        }
-        if (runEnded && resultOptions.length > 0) {
-            runResultSelection();
-        }
+        if (isSlotPickerOpen) { _pickerConfirm(); return; }
+        if (isPaused) { runPauseSelection(); return; }
+        if (runEnded && resultOptions.length > 0) { runResultSelection(); }
+    });
+    onKeyPress("x", () => {
+        if (isSlotPickerOpen) { playSfx("uiBack"); _pickerClose(); return; }
+        placeBomb();
     });
     onKeyPress("t", toggleMute);
-    onKeyPress("escape", togglePause);
-    onKeyPress("p", togglePause);
+    onKeyPress("escape", () => { if (isSlotPickerOpen) { playSfx("uiBack"); _pickerClose(); return; } togglePause(); });
+    onKeyPress("p",      () => { if (isSlotPickerOpen) { playSfx("uiBack"); _pickerClose(); return; } togglePause(); });
     onKeyPress("r", () => {
         if (isPaused || (runEnded && resultOptions.length > 0)) {
             playSfx("uiConfirm");
@@ -2290,8 +2382,8 @@ scene("boss", () => {
     const _bossStartStats = carryOverStats || { lives: START_LIVES, maxBombs: _bossDiffConfig.startBombs, firePower: _bossDiffConfig.startFire };
 
     setSceneAudio({
-        music: { name: "streetTheme", volume: 0.32 },
-        ambience: { name: "streetAmbience", volume: 0.10 },
+        music:    { name: "streetTheme",    volume: 0.32, speed: 1.22, detune: 700 },
+        ambience: { name: "streetAmbience", volume: 0.18, speed: 1.22, detune: 700 },
     });
 
     // Open arena: only fixed walls, no destructible boxes
@@ -2355,24 +2447,16 @@ scene("boss", () => {
     }
 
     // Boss HP bar (right side, row 2)
-    const BOSS_MAX_HP = 5;
+    const BOSS_MAX_HP = { easy: 8, medium: 12, hard: 16 }[selectedDifficulty] ?? 12;
     let bossHp = BOSS_MAX_HP;
-    const bossHpBlocks = [];
+    const HP_BAR_W = 112;
     add([text("HP", { size: 7 }), pos(82, 21), anchor("left"), color(255, 140, 120), fixed(), z(101)]);
-    for (let i = 0; i < BOSS_MAX_HP; i++) {
-        bossHpBlocks.push(add([
-            rect(18, 10),
-            pos(96 + i * 22, 22),
-            color(220, 70, 60),
-            fixed(),
-            z(101),
-        ]));
-    }
+    add([rect(HP_BAR_W, 10), pos(96, 22), color(50, 30, 30), anchor("topleft"), fixed(), z(101)]);
+    const bossHpFill = add([rect(HP_BAR_W, 10), pos(96, 22), color(220, 70, 60), anchor("topleft"), fixed(), z(102)]);
 
     function updateBossHpBar() {
-        bossHpBlocks.forEach((block, i) => {
-            block.color = i < bossHp ? rgb(220, 70, 60) : rgb(50, 30, 30);
-        });
+        bossHpFill.width = Math.max(0, HP_BAR_W * bossHp / BOSS_MAX_HP);
+        bossHpFill.color = bossHp <= BOSS_MAX_HP * 0.33 ? rgb(255, 80, 40) : bossHp <= BOSS_MAX_HP * 0.66 ? rgb(230, 140, 50) : rgb(220, 70, 60);
     }
 
     add([text("ESC PAUSA", { size: 8 }), pos(width() - 8, 12), anchor("right"), color(182, 194, 188), fixed(), z(101)]);
@@ -2525,6 +2609,7 @@ scene("boss", () => {
         anchor("center"), z(actorDepth(bossSpawn.y)), "boss",
         {
             hp: BOSS_MAX_HP,
+            iframes: 0,
             state: "patrol",        // patrol | charge | stomp | dead
             stateTimer: rand(2, 4),
             chargeDir: vec2(0, 0),
@@ -2549,7 +2634,8 @@ scene("boss", () => {
     boss.visual = bossVisual;
 
     function bossHit() {
-        if (boss.state === "dead") return;
+        if (boss.state === "dead" || boss.iframes > 0) return;
+        boss.iframes = 0.9;
         boss.hp -= 1;
         updateBossHpBar();
         bossVisual.color = rgb(255, 255, 255);
@@ -2570,30 +2656,11 @@ scene("boss", () => {
                     runEnded = true;
                     clearProgress();
                     playSfx("victorySfx");
-                    openFinalVictory();
+                    campaignElapsedMs = Date.now() - battleStartedAt;
+                    go("ending");
                 }
             });
         }
-    }
-
-    function openFinalVictory() {
-        const resultOverlay = add([rect(width(), height()), pos(0,0), color(0,0,0), opacity(0.72), fixed(), z(149), "resultUI"]);
-        add([sprite("controlsPanel"), pos(width()/2, height()/2), anchor("center"), fixed(), z(150), "resultUI"]);
-        add([text("CAMPANHA CONCLUIDA", { size: 16 }), pos(width()/2, height()/2 - 64), anchor("center"), color(236, 208, 122), fixed(), z(151), "resultUI"]);
-        add([text("O chefao foi eliminado!", { size: 10 }), pos(width()/2, height()/2 - 44), anchor("center"), color(196, 173, 186), fixed(), z(151), "resultUI"]);
-        add([text(`Tempo: ${formatBattleTime(Date.now() - battleStartedAt)}`, { size: 11 }), pos(width()/2, height()/2 - 24), anchor("center"), color(224, 214, 221), fixed(), z(151), "resultUI"]);
-
-        resultOptions = [
-            { label: "Nova Operacao", action: () => { currentPhase = 1; carryOverStats = null; go("game"); } },
-            { label: "Tela inicial",  action: () => { currentPhase = 1; carryOverStats = null; go("menu"); } },
-        ];
-        resultSelection = 0;
-        resultOptions.forEach((opt, i) => {
-            const y = height()/2 + 24 + i * 28;
-            const btn = add([sprite(i===0?"menuButtonActive":"menuButton"), pos(width()/2, y), anchor("center"), fixed(), z(151), "resultUI"]);
-            const lbl = add([text(opt.label, { size: 12 }), pos(width()/2, y+1), anchor("center"), color(i===0?240:196,i===0?244:173,i===0?236:186), fixed(), z(152), "resultUI"]);
-            resultButtons.push(btn); resultLabels.push(lbl);
-        });
     }
 
     // ── Explosion / Bomb (copied from game scene) ──
@@ -2668,6 +2735,7 @@ scene("boss", () => {
     onUpdate("boss", (b) => {
         if (isPaused || runEnded || b.state === "dead") return;
 
+        b.iframes = Math.max(0, b.iframes - dt());
         b.stateTimer -= dt();
         b.chargeCooldown = Math.max(0, b.chargeCooldown - dt());
         b.stompCooldown  = Math.max(0, b.stompCooldown  - dt());
@@ -2780,7 +2848,7 @@ scene("boss", () => {
             add([text("Escolha sua proxima acao", { size: 10 }), pos(width()/2,height()/2-44), anchor("center"), color(196,173,186), fixed(), z(151), "resultUI"]);
             resultOptions = [
                 { label: "Tentar de novo", action: () => { go("boss"); } },
-                { label: "Tela inicial",   action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
+                { label: "Tela inicial",   action: () => { currentPhase = 1; carryOverStats = null; go("menu"); } },
             ];
             resultSelection = 0;
             resultOptions.forEach((opt, i) => {
@@ -2816,13 +2884,22 @@ scene("boss", () => {
     });
 
     onUpdate(() => {
-        if (virtualPausePressed) { virtualPausePressed = false; toggleBossPause(); }
         vNavTimer -= dt();
+        if (isSlotPickerOpen) {
+            if (vNavTimer <= 0) {
+                if (vKeys.up)   { _pickerMove(-1); vNavTimer = 0.22; }
+                if (vKeys.down) { _pickerMove(1);  vNavTimer = 0.22; }
+            }
+            if (virtualBombPressed)  { virtualBombPressed  = false; _pickerConfirm(); }
+            if (virtualPausePressed) { virtualPausePressed = false; playSfx("uiBack"); _pickerClose(); }
+            return;
+        }
+        if (virtualPausePressed) { virtualPausePressed = false; toggleBossPause(); }
 
         if (isPaused) {
             if (vNavTimer <= 0) {
-                if (vKeys.up)   { pauseSelection=(pauseSelection-1+2)%2; playSfx("uiMove"); refreshBossPause(); vNavTimer=0.22; }
-                if (vKeys.down) { pauseSelection=(pauseSelection+1)%2; playSfx("uiMove"); refreshBossPause(); vNavTimer=0.22; }
+                if (vKeys.up)   { pauseSelection=(pauseSelection-1+bossPauseOptions.length)%bossPauseOptions.length; playSfx("uiMove"); refreshBossPause(); vNavTimer=0.22; }
+                if (vKeys.down) { pauseSelection=(pauseSelection+1)%bossPauseOptions.length; playSfx("uiMove"); refreshBossPause(); vNavTimer=0.22; }
             }
             if (virtualBombPressed) { virtualBombPressed=false; runBossPauseSelection(); }
             return;
@@ -2873,7 +2950,15 @@ scene("boss", () => {
     // ── Pause (boss scene) ──
     const bossPauseOptions = [
         { label: "Voltar para a rua", action: () => closeBossPause() },
-        { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; clearProgress(); go("menu"); } },
+        { label: "Salvar jogo", action: () => {
+            openSlotPicker("save", (slot) => {
+                activeSlot = slot;
+                saveProgress(currentPhase, bossLives, maxBombs, firePower);
+                showToast("Jogo salvo!", [100, 220, 140]);
+                closeBossPause();
+            });
+        }},
+        { label: "Tela inicial", action: () => { currentPhase = 1; carryOverStats = null; go("menu"); } },
     ];
 
     function refreshBossPause() {
@@ -2914,18 +2999,23 @@ scene("boss", () => {
         else { playSfx("pauseToggle"); openBossPause(); }
     }
 
-    onKeyPress("space", placeBomb); onKeyPress("z", placeBomb); onKeyPress("x", placeBomb);
-    onKeyPress("escape", toggleBossPause); onKeyPress("p", toggleBossPause);
+    onKeyPress("space", placeBomb); onKeyPress("z", placeBomb);
+    onKeyPress("x",      () => { if (isSlotPickerOpen) { playSfx("uiBack"); _pickerClose(); return; } placeBomb(); });
+    onKeyPress("escape", () => { if (isSlotPickerOpen) { playSfx("uiBack"); _pickerClose(); return; } toggleBossPause(); });
+    onKeyPress("p",      () => { if (isSlotPickerOpen) { playSfx("uiBack"); _pickerClose(); return; } toggleBossPause(); });
     onKeyPress("t", toggleMute);
     onKeyPress("up", () => {
+        if (isSlotPickerOpen) { _pickerMove(-1); return; }
         if (isPaused) { pauseSelection=(pauseSelection-1+bossPauseOptions.length)%bossPauseOptions.length; playSfx("uiMove"); refreshBossPause(); return; }
         if (runEnded && resultOptions.length>0) { resultSelection=(resultSelection-1+resultOptions.length)%resultOptions.length; playSfx("uiMove"); refreshBossResult(); }
     });
     onKeyPress("down", () => {
+        if (isSlotPickerOpen) { _pickerMove(1); return; }
         if (isPaused) { pauseSelection=(pauseSelection+1)%bossPauseOptions.length; playSfx("uiMove"); refreshBossPause(); return; }
         if (runEnded && resultOptions.length>0) { resultSelection=(resultSelection+1)%resultOptions.length; playSfx("uiMove"); refreshBossResult(); }
     });
     onKeyPress("enter", () => {
+        if (isSlotPickerOpen) { _pickerConfirm(); return; }
         if (isPaused) { runBossPauseSelection(); return; }
         if (runEnded && resultOptions.length>0) { playSfx("uiConfirm"); resultOptions[resultSelection].action(); }
     });
@@ -2933,6 +3023,108 @@ scene("boss", () => {
     updateHearts();
     updateStats();
     updateBossHpBar();
+});
+
+// ── Ending Cutscene ────────────────────────────────────────────────
+scene("ending", () => {
+    setSceneAudio({ music: { name: "menuTheme", volume: 0.22 }, ambience: null });
+
+    const cx = width() / 2;
+    const cy = height() / 2;
+    const diffLabel = DIFFICULTIES[selectedDifficulty]?.label ?? "MEDIO";
+    const timeStr = (() => {
+        const s = Math.floor(campaignElapsedMs / 1000);
+        return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+    })();
+
+    // ── Typewriter helper ──
+    function typewrite(obj, str, charInterval) {
+        let i = 0; let acc = 0;
+        const h = onUpdate(() => {
+            acc += dt();
+            const newI = Math.min(str.length, Math.floor(acc / charInterval));
+            if (newI !== i) { i = newI; obj.text = str.slice(0, i); }
+            if (i >= str.length) h.cancel();
+        });
+    }
+
+    // Shared layers (persist across slides)
+    const bg = add([rect(width(), height()), pos(0, 0), color(0, 0, 0), z(1)]);
+    let slideObjs = [];
+    function clearSlide() { slideObjs.forEach(o => { if (o.exists()) destroy(o); }); slideObjs = []; }
+
+    // ── Slide sequence ──
+
+    // Slide 1 – black, typewriter intro
+    wait(0.8, () => {
+        const t = add([text("", { size: 12, width: 240, align: "center" }), pos(cx, cy), anchor("center"), color(200, 200, 200), z(10)]);
+        slideObjs.push(t);
+        typewrite(t, "A ultima bomba detonou...", 0.055);
+    });
+
+    // Slide 2 – zombie falls
+    wait(3.0, () => {
+        clearSlide();
+        const zSprite = add([sprite("zombieAnim", { anim: "walk-down" }), pos(cx + 40, cy + 20), anchor("center"), scale(2.5), color(120, 40, 40), z(5)]);
+        slideObjs.push(zSprite);
+        let fadeT = 0;
+        const fadeH = onUpdate(() => { fadeT += dt(); zSprite.opacity = Math.max(0, 1 - fadeT * 0.55); if (zSprite.opacity <= 0) fadeH.cancel(); });
+        slideObjs.push({ exists: () => true, destroy: () => fadeH.cancel() });
+        const t = add([text("", { size: 12, width: 240, align: "center" }), pos(cx, cy - 50), anchor("center"), color(200, 200, 200), z(10)]);
+        slideObjs.push(t);
+        typewrite(t, "Os mortos-vivos foram silenciados...", 0.048);
+    });
+
+    // Slide 3 – survivor stands, dark blue bg
+    wait(5.8, () => {
+        clearSlide();
+        bg.color = rgb(18, 28, 52);
+        const pSprite = add([sprite("playerAnim", { anim: "idle-down" }), pos(cx, cy + 10), anchor("center"), scale(2.8), z(5)]);
+        slideObjs.push(pSprite);
+        const t = add([text("", { size: 12, width: 240, align: "center" }), pos(cx, cy - 58), anchor("center"), color(180, 220, 255), z(10)]);
+        slideObjs.push(t);
+        typewrite(t, "O sobrevivente ficou de pe.", 0.055);
+    });
+
+    // Slide 4 – sunrise, warm sky
+    wait(8.5, () => {
+        clearSlide();
+        bg.color = rgb(200, 100, 30);
+        const sky = add([rect(width(), height() / 2), pos(0, 0), color(240, 160, 50), z(2)]);
+        const ground = add([rect(width(), height() / 2), pos(0, height() / 2), color(60, 80, 40), z(2)]);
+        slideObjs.push(sky, ground);
+        const pSprite = add([sprite("playerAnim", { anim: "idle-down" }), pos(cx, cy + 10), anchor("center"), scale(2.8), z(5)]);
+        slideObjs.push(pSprite);
+        const t = add([text("", { size: 12, width: 240, align: "center" }), pos(cx, cy - 58), anchor("center"), color(255, 240, 180), z(10)]);
+        slideObjs.push(t);
+        typewrite(t, "A cidade pode respirar novamente.", 0.050);
+    });
+
+    // Slide 5 – golden bg, big title
+    wait(11.5, () => {
+        clearSlide();
+        bg.color = rgb(220, 170, 40);
+        const t1 = add([text("MISSAO CONCLUIDA", { size: 22 }), pos(cx, cy - 40), anchor("center"), color(255, 255, 180), z(10)]);
+        const t2 = add([text(`Dificuldade: ${diffLabel}`, { size: 11 }), pos(cx, cy + 8), anchor("center"), color(80, 40, 0), z(10)]);
+        const t3 = add([text(`Tempo: ${timeStr}`, { size: 11 }), pos(cx, cy + 26), anchor("center"), color(80, 40, 0), z(10)]);
+        slideObjs.push(t1, t2, t3);
+    });
+
+    // Slide 6 – prompt to continue
+    let readyToContinue = false;
+    wait(14.0, () => {
+        readyToContinue = true;
+        const prompt = add([text("[pressione qualquer tecla]", { size: 9 }), pos(cx, cy + 64), anchor("center"), color(255, 255, 200), z(10)]);
+        slideObjs.push(prompt);
+        let t = 0;
+        onUpdate(() => { t += dt(); prompt.opacity = 0.4 + 0.6 * Math.abs(Math.sin(t * 3)); });
+    });
+
+    // Auto-advance after 20s
+    wait(20.0, () => { currentPhase = 1; carryOverStats = null; go("menu"); });
+
+    const _endingGo = () => { if (readyToContinue) { currentPhase = 1; carryOverStats = null; go("menu"); } };
+    ["enter", "space", "escape", "z", "x"].forEach(k => onKeyPress(k, _endingGo));
 });
 
 go("menu");
