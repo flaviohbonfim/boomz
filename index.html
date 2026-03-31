@@ -1985,7 +1985,7 @@ scene("game", () => {
     }
 
     onUpdate("bomb", (bomb) => {
-        if (isPaused) return;
+        if (isPaused || runEnded) return;
 
         bomb.fuseTimer  -= dt();
         bomb.totalTimer -= dt();
@@ -2831,7 +2831,7 @@ scene("boss", () => {
     }
 
     onUpdate("bomb", (bomb) => {
-        if (isPaused) return;
+        if (isPaused || runEnded) return;
         bomb.fuseTimer -= dt(); bomb.totalTimer -= dt();
         if (bomb.fuseTimer <= 0 && bomb.phase === "fuse") {
             bomb.phase = "alert"; bomb.fuseTimer = Infinity; bomb.play("alert"); playSfx("bombAlert");
@@ -2857,7 +2857,7 @@ scene("boss", () => {
                 b.stateTimer = 0.9;
                 b.chargeCooldown = 6;
                 b.speed = BOSS_SPEED_CHARGE;
-                showToast("CARGA!", [255, 80, 60]);
+                showToast("CUIDADO!", [255, 80, 60]);
             } else if (b.stateTimer <= 0) {
                 b.stateTimer = rand(2.5, 4.5);
                 const g = gridFromPos(b.pos);
@@ -3368,7 +3368,7 @@ scene("ending", () => {
         slideObjs.push(pSprite);
         const t = add([text("", { size: 14, width: 260, align: "center" }), pos(cx, 16), anchor("center"), color(255, 255, 220), z(15)]);
         slideObjs.push(t);
-        typewrite(t, "A cidade estava salva!", 0.06);
+        typewrite(t, "A cidade foi salva!", 0.06);
     });
 
     // ── SLIDE 5 – Logo + stats ──
