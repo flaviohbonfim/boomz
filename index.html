@@ -1845,7 +1845,7 @@ scene("game", () => {
             add([
                 sprite("heart"),
                 pos(worldPos(gx, gy)),
-                area({ shape: new Rect(vec2(-4, -4), 8, 8) }),
+                area({ shape: new Rect(vec2(-2, -2), 4, 4) }),
                 anchor("center"),
                 scale(1.4),
                 z(12),
@@ -1861,7 +1861,7 @@ scene("game", () => {
         add([
             sprite(kind === POWER_BOMB ? "bombPower" : "firePower"),
             pos(worldPos(gx, gy)),
-            area({ shape: new Rect(vec2(-3, -3), 6, 6) }),
+            area({ shape: new Rect(vec2(-2, -2), 4, 4) }),
             anchor("center"),
             z(12),
             "powerup",
@@ -2744,7 +2744,6 @@ scene("boss", () => {
             wait(1.0, () => {
                 if (!runEnded) {
                     runEnded = true;
-                    clearProgress();
                     playSfx("victorySfx");
                     campaignElapsedMs = Date.now() - battleStartedAt;
                     go("ending");
@@ -2754,13 +2753,13 @@ scene("boss", () => {
     }
 
     // ── Explosion / Bomb (copied from game scene) ──
-    function spawnExplosion(gx, gy, spriteState = { anim: "center", flipX: false, flipY: false }) {
+    function spawnExplosion(gx, gy, spriteState = { anim: "center", flipX: false, flipY: false }, fromBoss = false) {
         const exp = add([
             sprite("explosionAnim", { anim: spriteState.anim, flipX: spriteState.flipX, flipY: spriteState.flipY }),
             pos(worldPos(gx, gy)), area({ shape: new Rect(vec2(-7, -7), 14, 14) }), anchor("center"), z(40), "explosion",
         ]);
-        // Hit boss (check 3x3 area around boss center)
-        if (boss.exists() && boss.state !== "dead") {
+        // Hit boss (check 3x3 area around boss center) — skip self-damage from boss stomp
+        if (!fromBoss && boss.exists() && boss.state !== "dead") {
             const bg = gridFromPos(boss.pos);
             if (Math.abs(bg.x - gx) <= 1 && Math.abs(bg.y - gy) <= 1) bossHit();
         }
@@ -2890,7 +2889,7 @@ scene("boss", () => {
                 [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy]) => {
                     const nx = bg.x + dx, ny = bg.y + dy;
                     if (inBounds(nx, ny) && gameMap[ny][nx] !== SOLID) {
-                        spawnExplosion(nx, ny, { anim: "center", flipX: false, flipY: false });
+                        spawnExplosion(nx, ny, { anim: "center", flipX: false, flipY: false }, true);
                     }
                 });
                 b.state = "patrol";
