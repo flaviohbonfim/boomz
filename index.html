@@ -3157,80 +3157,263 @@ scene("ending", () => {
         });
     }
 
-    // Shared layers (persist across slides)
+    // Shared layers
     const bg = add([rect(width(), height()), pos(0, 0), color(0, 0, 0), z(1)]);
     let slideObjs = [];
-    function clearSlide() { slideObjs.forEach(o => { if (o.exists()) destroy(o); }); slideObjs = []; }
+    let updateHandles = [];
+    function clearSlide() {
+        slideObjs.forEach(o => { if (o.exists()) destroy(o); });
+        slideObjs = [];
+        updateHandles.forEach(h => h.cancel());
+        updateHandles = [];
+    }
 
-    // ── Slide sequence ──
+    // ── City building layout (shared across slides) ──
+    const BUILDINGS = [
+        { x: 0,   w: 40, h: 100 },
+        { x: 42,  w: 50, h: 80  },
+        { x: 94,  w: 35, h: 115 },
+        { x: 131, w: 55, h: 85  },
+        { x: 188, w: 42, h: 110 },
+        { x: 232, w: 52, h: 90  },
+        { x: 286, w: 18, h: 105 },
+    ];
+    const GROUND_Y = 240;
 
-    // Slide 1 – black, typewriter intro
-    wait(0.8, () => {
-        const t = add([text("", { size: 12, width: 240, align: "center" }), pos(cx, cy), anchor("center"), color(200, 200, 200), z(10)]);
+    // ── Scene builders ──
+    function drawNightCity() {
+        slideObjs.push(add([rect(304, 244), pos(0, 0), color(8, 12, 28), z(2)]));
+        slideObjs.push(add([rect(304, 44), pos(0, 236), color(18, 18, 18), z(2)]));
+        slideObjs.push(add([rect(304, 4), pos(0, 236), color(35, 35, 35), z(3)]));
+        // Stars
+        [[12,15],[28,8],[55,22],[80,12],[105,6],[130,18],[158,10],[175,25],
+         [195,8],[218,20],[240,6],[258,16],[275,9],[290,22],[300,14],[40,35],
+         [160,38],[220,30]].forEach(([sx, sy]) => {
+            slideObjs.push(add([rect(2, 2), pos(sx, sy), color(240, 240, 220), opacity(0.5 + rand(0, 0.4)), z(3)]));
+        });
+        // Moon
+        slideObjs.push(add([circle(12), pos(252, 28), anchor("center"), color(235, 230, 210), z(3)]));
+        // Buildings silhouette + dim windows
+        const wins = [[[10,20],[25,38]],[[20,22]],[[8,18],[18,38],[8,58]],[[15,20],[35,42]],[[10,22],[22,48]],[[18,28]],[[4,20]]];
+        BUILDINGS.forEach((b, i) => {
+            slideObjs.push(add([rect(b.w, b.h), pos(b.x, GROUND_Y - b.h), color(14, 18, 24), z(4)]));
+            wins[i].forEach(([wx, wy]) => {
+                slideObjs.push(add([rect(4, 4), pos(b.x + wx, GROUND_Y - b.h + wy), color(240, 200, 100), opacity(rand(0.35, 0.65)), z(5)]));
+            });
+        });
+    }
+
+    function drawDawnCity() {
+        // Gradient sky strips
+        [[0,50,[15,25,55]],[50,45,[50,40,90]],[95,40,[120,60,110]],[135,45,[200,90,55]],[180,62,[245,155,45]]].forEach(([y,h,c]) => {
+            slideObjs.push(add([rect(304, h), pos(0, y), color(...c), z(2)]));
+        });
+        // Sun halo + sun
+        slideObjs.push(add([circle(26), pos(cx, 224), anchor("center"), color(255, 190, 30), opacity(0.25), z(3)]));
+        slideObjs.push(add([circle(16), pos(cx, 224), anchor("center"), color(255, 230, 60), z(4)]));
+        // Building silhouettes against dawn sky
+        BUILDINGS.forEach(b => {
+            slideObjs.push(add([rect(b.w, b.h), pos(b.x, GROUND_Y - b.h), color(28, 22, 38), z(5)]));
+        });
+        slideObjs.push(add([rect(304, 44), pos(0, 236), color(30, 25, 22), z(5)]));
+        slideObjs.push(add([rect(304, 4), pos(0, 236), color(50, 40, 30), z(6)]));
+    }
+
+    function drawCelebrationCity() {
+        // Sky
+        slideObjs.push(add([rect(304, 244), pos(0, 0), color(90, 170, 245), z(2)]));
+        // Sun halo + sun
+        slideObjs.push(add([circle(26), pos(242, 28), anchor("center"), color(255, 230, 60), opacity(0.28), z(3)]));
+        slideObjs.push(add([circle(18), pos(242, 28), anchor("center"), color(255, 240, 50), z(4)]));
+        // Colorful buildings with windows
+        const bldgColors = [[85,80,100],[105,88,68],[72,84,90],[95,70,62],[78,88,78],[88,78,100],[82,82,72]];
+        BUILDINGS.forEach((b, i) => {
+            slideObjs.push(add([rect(b.w, b.h), pos(b.x, GROUND_Y - b.h), color(...bldgColors[i]), z(5)]));
+            for (let wy = 6; wy < b.h - 8; wy += 9) {
+                for (let wx = 4; wx < b.w - 5; wx += 8) {
+                    slideObjs.push(add([rect(4, 4), pos(b.x + wx, GROUND_Y - b.h + wy), color(255, 240, 120), opacity(0.85), z(6)]));
+                }
+            }
+            slideObjs.push(add([rect(b.w, 2), pos(b.x, GROUND_Y - b.h), color(0, 0, 0), opacity(0.28), z(7)]));
+        });
+        // Street
+        slideObjs.push(add([rect(304, 44), pos(0, 236), color(55, 52, 48), z(5)]));
+        slideObjs.push(add([rect(304, 4), pos(0, 236), color(90, 85, 78), z(6)]));
+        for (let lx = 0; lx < 304; lx += 22) {
+            slideObjs.push(add([rect(12, 2), pos(lx, 258), color(200, 190, 140), opacity(0.45), z(7)]));
+        }
+    }
+
+    function spawnPerson(x, sr, sg, sb) {
+        const skin = [215, 170, 130];
+        const gy = 237;
+        const parts = [
+            { obj: add([circle(3), pos(x, gy - 14), anchor("center"), color(...skin), z(8)]),   baseY: gy - 14 },
+            { obj: add([rect(6, 7), pos(x - 3, gy - 11), color(sr, sg, sb), z(8)]),              baseY: gy - 11 },
+            { obj: add([rect(2, 6), pos(x - 7, gy - 15), color(...skin), z(8)]),                 baseY: gy - 15 },
+            { obj: add([rect(2, 6), pos(x + 5, gy - 15), color(...skin), z(8)]),                 baseY: gy - 15 },
+            { obj: add([rect(3, 5), pos(x - 3, gy - 4),  color(40, 60, 100), z(8)]),             baseY: gy - 4  },
+            { obj: add([rect(3, 5), pos(x,     gy - 4),  color(40, 60, 100), z(8)]),             baseY: gy - 4  },
+        ];
+        parts.forEach(p => slideObjs.push(p.obj));
+        return parts;
+    }
+
+    // ── SLIDE 1 – "A explosao final" ──
+    wait(0.5, () => {
+        let flashT = 0;
+        const flashH = onUpdate(() => {
+            flashT += dt();
+            if (flashT < 0.1) {
+                bg.color = rgb(255, 150, 35);
+            } else {
+                const fade = Math.max(0, 1 - (flashT - 0.1) / 0.9);
+                bg.color = rgb(Math.floor(fade * 55), Math.floor(fade * 18), 0);
+            }
+            if (flashT > 1.1) { bg.color = rgb(0, 0, 0); flashH.cancel(); }
+        });
+        updateHandles.push(flashH);
+        // Smoke particles
+        const smokes = [
+            { obj: add([circle(4), pos(cx - 22, cy + 28), anchor("center"), color(155, 148, 140), opacity(0.8), z(5)]), vy: 24 },
+            { obj: add([circle(5), pos(cx + 12, cy + 18), anchor("center"), color(138, 130, 125), opacity(0.7), z(5)]), vy: 19 },
+            { obj: add([circle(3), pos(cx - 6,  cy + 42), anchor("center"), color(168, 158, 148), opacity(0.6), z(5)]), vy: 30 },
+            { obj: add([circle(4), pos(cx + 32, cy + 34), anchor("center"), color(148, 140, 132), opacity(0.75), z(5)]), vy: 21 },
+        ];
+        smokes.forEach(s => slideObjs.push(s.obj));
+        const smokeH = onUpdate(() => {
+            smokes.forEach(s => {
+                s.obj.pos.y -= s.vy * dt();
+                s.obj.opacity = Math.max(0, s.obj.opacity - dt() * 0.32);
+            });
+        });
+        updateHandles.push(smokeH);
+        const t = add([text("", { size: 12, width: 240, align: "center" }), pos(cx, cy + 18), anchor("center"), color(210, 210, 210), z(10)]);
         slideObjs.push(t);
-        typewrite(t, "A ultima bomba detonou...", 0.055);
+        typewrite(t, "A ultima bomba destruiu o chefao...", 0.055);
     });
 
-    // Slide 2 – zombie falls
+    // ── SLIDE 2 – "Cidade noturna em silencio" ──
     wait(3.0, () => {
         clearSlide();
-        const zSprite = add([sprite("zombieAnim", { anim: "walk-down" }), pos(cx + 40, cy + 20), anchor("center"), scale(2.5), color(120, 40, 40), z(5)]);
-        slideObjs.push(zSprite);
-        let fadeT = 0;
-        const fadeH = onUpdate(() => { fadeT += dt(); zSprite.opacity = Math.max(0, 1 - fadeT * 0.55); if (zSprite.opacity <= 0) fadeH.cancel(); });
-        slideObjs.push({ exists: () => true, destroy: () => fadeH.cancel() });
-        const t = add([text("", { size: 12, width: 240, align: "center" }), pos(cx, cy - 50), anchor("center"), color(200, 200, 200), z(10)]);
-        slideObjs.push(t);
-        typewrite(t, "Os mortos-vivos foram silenciados...", 0.048);
-    });
-
-    // Slide 3 – survivor stands, dark blue bg
-    wait(5.8, () => {
-        clearSlide();
-        bg.color = rgb(18, 28, 52);
-        const pSprite = add([sprite("playerAnim", { anim: "idle-down" }), pos(cx, cy + 10), anchor("center"), scale(2.8), z(5)]);
+        bg.color = rgb(8, 12, 28);
+        drawNightCity();
+        const pSprite = add([sprite("playerAnim", { anim: "idle-down" }), pos(cx, 232), anchor("center"), scale(2.5), z(9)]);
         slideObjs.push(pSprite);
-        const t = add([text("", { size: 12, width: 240, align: "center" }), pos(cx, cy - 58), anchor("center"), color(180, 220, 255), z(10)]);
+        const t = add([text("", { size: 11, width: 260, align: "center" }), pos(cx, 20), anchor("center"), color(180, 210, 255), z(12)]);
         slideObjs.push(t);
-        typewrite(t, "O sobrevivente ficou de pe.", 0.055);
+        typewrite(t, "Os monstros foram silenciados para sempre.", 0.048);
     });
 
-    // Slide 4 – sunrise, warm sky
-    wait(8.5, () => {
+    // ── SLIDE 3 – "O amanhecer" ──
+    wait(6.5, () => {
         clearSlide();
-        bg.color = rgb(200, 100, 30);
-        const sky = add([rect(width(), height() / 2), pos(0, 0), color(240, 160, 50), z(2)]);
-        const ground = add([rect(width(), height() / 2), pos(0, height() / 2), color(60, 80, 40), z(2)]);
-        slideObjs.push(sky, ground);
-        const pSprite = add([sprite("playerAnim", { anim: "idle-down" }), pos(cx, cy + 10), anchor("center"), scale(2.8), z(5)]);
+        bg.color = rgb(15, 25, 55);
+        drawDawnCity();
+        const pSprite = add([sprite("playerAnim", { anim: "idle-down" }), pos(cx, 232), anchor("center"), scale(2.5), color(255, 200, 160), z(9)]);
         slideObjs.push(pSprite);
-        const t = add([text("", { size: 12, width: 240, align: "center" }), pos(cx, cy - 58), anchor("center"), color(255, 240, 180), z(10)]);
+        const t = add([text("", { size: 11, width: 260, align: "center" }), pos(cx, 20), anchor("center"), color(255, 230, 180), z(12)]);
         slideObjs.push(t);
-        typewrite(t, "A cidade pode respirar novamente.", 0.050);
+        typewrite(t, "Um novo amanhecer sobre a cidade...", 0.052);
     });
 
-    // Slide 5 – golden bg, big title
-    wait(11.5, () => {
+    // ── SLIDE 4 – "A cidade celebra!" ──
+    wait(10.0, () => {
         clearSlide();
-        bg.color = rgb(220, 170, 40);
-        const t1 = add([text("MISSAO CONCLUIDA", { size: 22 }), pos(cx, cy - 40), anchor("center"), color(255, 255, 180), z(10)]);
-        const t2 = add([text(`Dificuldade: ${diffLabel}`, { size: 11 }), pos(cx, cy + 8), anchor("center"), color(80, 40, 0), z(10)]);
-        const t3 = add([text(`Tempo: ${timeStr}`, { size: 11 }), pos(cx, cy + 26), anchor("center"), color(80, 40, 0), z(10)]);
-        slideObjs.push(t1, t2, t3);
+        bg.color = rgb(90, 170, 245);
+        drawCelebrationCity();
+
+        // Confetti
+        const CONFETTI_COLORS = [
+            [255,80,80],[80,210,90],[70,130,255],[255,210,50],[255,100,200],[90,240,240],
+        ];
+        const confetti = [];
+        for (let i = 0; i < 30; i++) {
+            const ci = Math.floor(Math.random() * CONFETTI_COLORS.length);
+            const co = add([rect(3, 3), pos(rand(0, width()), rand(0, height())), color(...CONFETTI_COLORS[ci]), z(13)]);
+            slideObjs.push(co);
+            confetti.push({ obj: co, vy: rand(45, 85), vx: rand(-18, 18) });
+        }
+        const confettiH = onUpdate(() => {
+            confetti.forEach(c => {
+                c.obj.pos.y += c.vy * dt();
+                c.obj.pos.x += c.vx * dt();
+                if (c.obj.pos.y > height()) { c.obj.pos.y = rand(-30, -2); c.obj.pos.x = rand(0, width()); }
+            });
+        });
+        updateHandles.push(confettiH);
+
+        // Pixel people celebrating (arms raised)
+        const peopleData = [
+            { x: 42,  sr: 220, sg: 80,  sb: 60  },
+            { x: 88,  sr: 60,  sg: 140, sb: 220 },
+            { x: 212, sr: 80,  sg: 200, sb: 100 },
+            { x: 258, sr: 220, sg: 180, sb: 60  },
+        ];
+        const allPeople = peopleData.map((pd, pi) => ({
+            parts: spawnPerson(pd.x, pd.sr, pd.sg, pd.sb),
+            speed: rand(3, 5),
+            offset: pi * 1.57,
+            jumpH: rand(3, 6),
+        }));
+        const bounceH = onUpdate(() => {
+            allPeople.forEach(p => {
+                const bounce = -Math.abs(Math.sin(time() * p.speed + p.offset)) * p.jumpH;
+                p.parts.forEach(({ obj, baseY }) => { obj.pos.y = baseY + bounce; });
+            });
+        });
+        updateHandles.push(bounceH);
+
+        const pSprite = add([sprite("playerAnim", { anim: "idle-down" }), pos(cx, 232), anchor("center"), scale(2.5), z(9)]);
+        slideObjs.push(pSprite);
+        const t = add([text("", { size: 14, width: 260, align: "center" }), pos(cx, 16), anchor("center"), color(255, 255, 220), z(15)]);
+        slideObjs.push(t);
+        typewrite(t, "A cidade estava salva!", 0.06);
     });
 
-    // Slide 6 – prompt to continue
-    let readyToContinue = false;
+    // ── SLIDE 5 – Logo + stats ──
     wait(14.0, () => {
-        readyToContinue = true;
-        const prompt = add([text("[pressione qualquer tecla]", { size: 9 }), pos(cx, cy + 64), anchor("center"), color(255, 255, 200), z(10)]);
-        slideObjs.push(prompt);
-        let t = 0;
-        onUpdate(() => { t += dt(); prompt.opacity = 0.4 + 0.6 * Math.abs(Math.sin(t * 3)); });
+        clearSlide();
+        bg.color = rgb(10, 15, 25);
+        slideObjs.push(add([rect(304, 56), pos(0, 224), color(18, 14, 8), z(2)]));
+
+        // Logo animated rise (easeOut)
+        const logoTargetY = 74;
+        const logoStartY = height() + 50;
+        let logoT = 0;
+        const logoShadow = add([sprite("gameLogo"), pos(cx + 2, logoStartY + 2), anchor("center"), scale(0.10), color(0, 0, 0), opacity(0.28), z(9)]);
+        const logoMain   = add([sprite("gameLogo"), pos(cx, logoStartY), anchor("center"), scale(0.10), z(10)]);
+        slideObjs.push(logoShadow, logoMain);
+        const logoH = onUpdate(() => {
+            logoT += dt();
+            const ease = 1 - Math.pow(1 - Math.min(1, logoT / 1.5), 2);
+            const ny = logoStartY + (logoTargetY - logoStartY) * ease;
+            logoMain.pos.y = ny;
+            logoShadow.pos.y = ny + 2;
+        });
+        updateHandles.push(logoH);
+
+        // Stats appear after logo lands
+        wait(1.4, () => {
+            const t1 = add([text("MISSAO CONCLUIDA", { size: 16 }), pos(cx, 144), anchor("center"), color(236, 208, 122), z(11)]);
+            const t2 = add([text(`Dificuldade: ${diffLabel}`, { size: 10 }), pos(cx, 170), anchor("center"), color(180, 190, 178), z(11)]);
+            const t3 = add([text(`Tempo: ${timeStr}`,          { size: 10 }), pos(cx, 186), anchor("center"), color(180, 190, 178), z(11)]);
+            slideObjs.push(t1, t2, t3);
+        });
     });
 
-    // Auto-advance after 20s
-    wait(20.0, () => { currentPhase = 1; carryOverStats = null; go("menu"); });
+    // Prompt to continue
+    let readyToContinue = false;
+    wait(16.2, () => {
+        readyToContinue = true;
+        const prompt = add([text("[pressione qualquer tecla]", { size: 9 }), pos(cx, 218), anchor("center"), color(255, 255, 200), z(12)]);
+        slideObjs.push(prompt);
+        const blinkH = onUpdate(() => { prompt.opacity = 0.4 + 0.6 * Math.abs(Math.sin(time() * 3)); });
+        updateHandles.push(blinkH);
+    });
+
+    // Auto-advance after 22s
+    wait(22.0, () => { currentPhase = 1; carryOverStats = null; go("menu"); });
 
     const _endingGo = () => { if (readyToContinue) { currentPhase = 1; carryOverStats = null; go("menu"); } };
     ["enter", "space", "escape", "z", "x"].forEach(k => onKeyPress(k, _endingGo));
