@@ -1132,8 +1132,8 @@ scene("game", () => {
     const _startStats = carryOverStats || { lives: START_LIVES, maxBombs: diffConfig.startBombs, firePower: diffConfig.startFire };
 
     setSceneAudio({
-        music: { name: "streetTheme", volume: 0.2 },
-        ambience: { name: "streetAmbience", volume: 0.16 },
+        music:    phaseConfig.music,
+        ambience: phaseConfig.ambience,
     });
 
     generateMap();
