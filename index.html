@@ -434,8 +434,8 @@ const PHASES = [
 ];
 
 let activeSlot = 1;
-function saveSlot(slot, phase, lives, maxBombs, firePower) {
-    try { localStorage.setItem(`boomz_save_${slot}`, JSON.stringify({ phase, lives, maxBombs, firePower, difficulty: selectedDifficulty, ts: Date.now() })); } catch {}
+function saveSlot(slot, phase, lives, maxBombs, firePower, destroyedTiles, enemiesDefeated) {
+    try { localStorage.setItem(`boomz_save_${slot}`, JSON.stringify({ phase, lives, maxBombs, firePower, difficulty: selectedDifficulty, ts: Date.now(), destroyedTiles, enemiesDefeated })); } catch {}
 }
 function loadSlot(slot) {
     try { const r = localStorage.getItem(`boomz_save_${slot}`); return r ? JSON.parse(r) : null; } catch { return null; }
@@ -444,9 +444,23 @@ function clearSlot(slot) {
     try { localStorage.removeItem(`boomz_save_${slot}`); } catch {}
 }
 function getAllSlots() { return [1, 2, 3].map(i => loadSlot(i)); }
-function saveProgress(phase, lives, maxBombs, firePower) { saveSlot(activeSlot, phase, lives, maxBombs, firePower); }
+function saveProgress(phase, lives, maxBombs, firePower, destroyedTiles, enemiesDefeated) { saveSlot(activeSlot, phase, lives, maxBombs, firePower, destroyedTiles, enemiesDefeated); }
 function loadProgress() { return loadSlot(activeSlot); }
 function clearProgress() { clearSlot(activeSlot); }
+function collectDestroyedTiles() {
+    const tiles = [];
+    for (let y = 0; y < MAP_HEIGHT; y++)
+        for (let x = 0; x < MAP_WIDTH; x++)
+            if (gameMap[y] && gameMap[y][x] === EMPTY) tiles.push(`${x},${y}`);
+    return tiles;
+}
+function applyDestroyedTiles(tiles) {
+    if (!tiles) return;
+    const tileSet = new Set(tiles);
+    for (let y = 0; y < MAP_HEIGHT; y++)
+        for (let x = 0; x < MAP_WIDTH; x++)
+            if (gameMap[y][x] === DESTRUCTIBLE && tileSet.has(`${x},${y}`)) gameMap[y][x] = EMPTY;
+}
 
 // ── Slot picker state (driven by scene handlers, no dynamic onKeyPress) ──
 let _picker = null;
@@ -818,13 +832,15 @@ function generateMap() {
     }
 
     const safeZone = new Set(["1,1", "2,1", "1,2", "3,1", "1,3", "2,2"]);
+    let seed = currentPhase * 100003;
+    function seededRandom() { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; }
     for (let y = 1; y < MAP_HEIGHT - 1; y++) {
         for (let x = 1; x < MAP_WIDTH - 1; x++) {
             if (
                 gameMap[y][x] === EMPTY
                 && !safeZone.has(`${x},${y}`)
                 && !isEdgeCorridor(x, y)
-                && Math.random() < DIFFICULTIES[selectedDifficulty].boxDensity
+                && seededRandom() < DIFFICULTIES[selectedDifficulty].boxDensity
             ) {
                 gameMap[y][x] = DESTRUCTIBLE;
             }
@@ -1177,7 +1193,7 @@ scene("menu", () => {
                 activeSlot = slot;
                 selectedDifficulty = data.difficulty || "medium";
                 currentPhase = data.phase;
-                carryOverStats = { lives: data.lives, maxBombs: data.maxBombs, firePower: data.firePower };
+                carryOverStats = { lives: data.lives, maxBombs: data.maxBombs, firePower: data.firePower, destroyedTiles: data.destroyedTiles, enemiesDefeated: data.enemiesDefeated };
                 go("game");
             });
             return;
@@ -1340,6 +1356,8 @@ scene("game", () => {
 
     generateMap();
 
+    if (_startStats.destroyedTiles) applyDestroyedTiles(_startStats.destroyedTiles);
+
     // Clear any lingering virtual button flags from menu/previous scene
     virtualBombPressed  = false;
     virtualPausePressed = false;
@@ -1352,7 +1370,7 @@ scene("game", () => {
     let isInvincible = false;
     let runEnded = false;
     const battleStartedAt = Date.now();
-    let enemiesDefeated = 0;
+    let enemiesDefeated = _startStats.enemiesDefeated || 0;
     let totalEnemies = 0;
     let pauseSelection = 0;
     let pauseButtons = [];
@@ -1372,7 +1390,7 @@ scene("game", () => {
         { label: "Salvar jogo", action: () => {
             openSlotPicker("save", (slot) => {
                 activeSlot = slot;
-                saveProgress(currentPhase, lives, maxBombs, firePower);
+                saveProgress(currentPhase, lives, maxBombs, firePower, collectDestroyedTiles(), enemiesDefeated);
                 showToast("Jogo salvo!", [100, 220, 140]);
                 closePause();
             });
@@ -2080,6 +2098,8 @@ scene("game", () => {
     for (const group of phaseConfig.zombies) {
         for (let i = 0; i < group.count; i++) zombieTypeList.push(group.type);
     }
+    const savedDefeated = _startStats.enemiesDefeated || 0;
+    if (savedDefeated > 0) zombieTypeList.splice(zombieTypeList.length - savedDefeated, savedDefeated);
 
     const spawnCandidates = [
         { x: MAP_WIDTH - 3, y: MAP_HEIGHT - 3 },
@@ -2520,27 +2540,26 @@ scene("boss", () => {
         }
     }
 
-    // HUD title
-    add([text(`FASE 6  •  CHEFAO`, { size: 8 }), pos(width() / 2, 8), anchor("center"), color(255, 100, 80), fixed(), z(101)]);
+    // HUD title — center of boss HP box in hudPanel: x=72 + 146/2 = 145
+    const BOSS_HUD_CX = 145;
+    add([text(`CHEFAO`, { size: 8 }), pos(BOSS_HUD_CX, 8), anchor("center"), color(255, 100, 80), fixed(), z(101)]);
 
-    // Hearts (left, row 2)
+    // Hearts (left)
     const hearts = [];
     for (let i = 0; i < START_LIVES; i++) {
-        hearts.push(add([sprite("heart"), pos(18 + i * 15, 27), anchor("center"), scale(1.3), fixed(), z(101)]));
+        hearts.push(add([sprite("heart"), pos(18 + i * 15, 24), anchor("center"), scale(1.3), fixed(), z(101)]));
     }
     function updateHearts() {
         hearts.forEach((h, i) => h.use(sprite(i < bossLives ? "heart" : "heartEmpty")));
     }
 
-    // Boss HP bar (centered, row 2 — wider since bomb/fire stats moved to small indicators)
+    // Boss HP bar (center of boss HP box)
     const BOSS_MAX_HP = { easy: 8, medium: 12, hard: 16 }[selectedDifficulty] ?? 12;
     let bossHp = BOSS_MAX_HP;
-    const HP_BAR_W = 180;
-    const HP_BAR_X = 62;
-    add([text("CHEFAO", { size: 7 }), pos(HP_BAR_X - 2, 19), anchor("right"), color(255, 140, 120), fixed(), z(101)]);
-    add([rect(HP_BAR_W, 10), pos(HP_BAR_X, 20), color(50, 30, 30), anchor("topleft"), fixed(), z(101)]);
-    const bossHpFill = add([rect(HP_BAR_W, 10), pos(HP_BAR_X, 20), color(220, 70, 60), anchor("topleft"), fixed(), z(102)]);
-    const bossHpText = add([text(`${BOSS_MAX_HP}/${BOSS_MAX_HP}`, { size: 7 }), pos(HP_BAR_X + HP_BAR_W / 2, 25), anchor("center"), color(255, 255, 255), fixed(), z(103)]);
+    const HP_BAR_W = 126;
+    add([rect(HP_BAR_W, 10), pos(BOSS_HUD_CX, 24), color(50, 30, 30), anchor("center"), fixed(), z(101)]);
+    const bossHpFill = add([rect(HP_BAR_W, 10), pos(BOSS_HUD_CX, 24), color(220, 70, 60), anchor("center"), fixed(), z(102)]);
+    const bossHpText = add([text(`${BOSS_MAX_HP}/${BOSS_MAX_HP}`, { size: 7 }), pos(BOSS_HUD_CX, 24), anchor("center"), color(255, 255, 255), fixed(), z(103)]);
 
     function updateBossHpBar() {
         bossHp = boss.hp;
@@ -2551,11 +2570,11 @@ scene("boss", () => {
 
     add([text("ESC PAUSA", { size: 8 }), pos(width() - 8, 12), anchor("right"), color(182, 194, 188), fixed(), z(101)]);
 
-    // Bomb/fire stats — compact indicators (bottom-left of HUD)
-    add([sprite("bombPower"), pos(10, 33), anchor("center"), scale(0.9), fixed(), z(101)]);
-    const bombCountText = add([text(`${maxBombs}`, { size: 9 }), pos(18, 33), anchor("left"), color(239, 215, 159), fixed(), z(101)]);
-    add([sprite("firePower"), pos(36, 33), anchor("center"), scale(0.9), fixed(), z(101)]);
-    const fireCountText = add([text(`${firePower}`, { size: 9 }), pos(44, 33), anchor("left"), color(239, 195, 120), fixed(), z(101)]);
+    // Bomb/fire stats — below "ESC PAUSA" (right side)
+    add([sprite("bombPower"), pos(254, 24), anchor("center"), scale(0.9), fixed(), z(101)]);
+    const bombCountText = add([text(`${maxBombs}`, { size: 9 }), pos(262, 24), anchor("left"), color(239, 215, 159), fixed(), z(101)]);
+    add([sprite("firePower"), pos(278, 24), anchor("center"), scale(0.9), fixed(), z(101)]);
+    const fireCountText = add([text(`${firePower}`, { size: 9 }), pos(286, 24), anchor("left"), color(239, 195, 120), fixed(), z(101)]);
 
     function updateStats() {
         bombCountText.text = `${maxBombs}`;
