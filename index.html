@@ -456,32 +456,47 @@ function openSlotPicker(mode, onSelect) {
     if (mode === "load" && slots.every(s => s === null)) return;
 
     const sel0 = mode === "load" ? Math.max(0, slots.findIndex(s => s !== null)) : 0;
+    const cx = width() / 2, cy = height() / 2;
 
-    function slotLabel(i) {
+    function labelLine1(i) {
         const d = slots[i];
-        if (!d) return `SLOT ${i + 1}   VAZIO`;
-        const date = new Date(d.ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-        return `SLOT ${i + 1}   Fase ${d.phase}   ${DIFFICULTIES[d.difficulty]?.label ?? "MEDIO"}   ${date}`;
+        if (!d) return `SLOT ${i + 1}   -   VAZIO`;
+        return `SLOT ${i + 1}   Fase ${d.phase}   ${DIFFICULTIES[d.difficulty]?.label ?? "MEDIO"}`;
+    }
+    function labelLine2(i) {
+        const d = slots[i];
+        if (!d) return "";
+        return new Date(d.ts).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
     }
 
+    // Background panel (drawn rects, no sprite)
     add([rect(width(), height()), pos(0, 0), color(0, 0, 0), opacity(0.78), fixed(), z(145), "slotPickerUI"]);
-    add([sprite("controlsPanel"), pos(width() / 2, height() / 2), anchor("center"), fixed(), z(146), "slotPickerUI"]);
-    add([text(mode === "save" ? "SALVAR JOGO" : "CARREGAR JOGO", { size: 14 }), pos(width() / 2, height() / 2 - 68), anchor("center"), color(236, 208, 122), fixed(), z(147), "slotPickerUI"]);
-    add([text("setas + Enter   /   ESC para fechar", { size: 8 }), pos(width() / 2, height() / 2 - 50), anchor("center"), color(160, 172, 168), fixed(), z(147), "slotPickerUI"]);
+    add([rect(260, 190), pos(cx, cy), anchor("center"), color(15, 19, 17), fixed(), z(145), "slotPickerUI"]);
+    add([rect(256, 186), pos(cx, cy), anchor("center"), color(27, 33, 30), fixed(), z(146), "slotPickerUI"]);
+    add([rect(256, 8), pos(cx, cy - 87), anchor("center"), color(207, 154, 60), fixed(), z(146), "slotPickerUI"]);
+    add([text(mode === "save" ? "SALVAR JOGO" : "CARREGAR JOGO", { size: 13 }), pos(cx, cy - 69), anchor("center"), color(236, 208, 122), fixed(), z(147), "slotPickerUI"]);
+    add([text("setas + Enter  /  ESC para fechar", { size: 7 }), pos(cx, cy - 49), anchor("center"), color(140, 155, 148), fixed(), z(147), "slotPickerUI"]);
 
-    const btns = [], lbls = [];
+    // Slot rows: center positions
+    const rowYs = [cy - 16, cy + 28, cy + 72];
+    const borders = [], fills = [], line1s = [], line2s = [];
     for (let i = 0; i < 3; i++) {
-        const y = height() / 2 - 10 + i * 32;
+        const y = rowYs[i];
         const inactive = mode === "load" && slots[i] === null;
-        btns.push(add([sprite("menuButton"), pos(width() / 2, y), anchor("center"), fixed(), z(147), "slotPickerUI"]));
-        lbls.push(add([text(slotLabel(i), { size: 9 }), pos(width() / 2, y + 1), anchor("center"), color(inactive ? 90 : 196, inactive ? 90 : 173, inactive ? 90 : 186), fixed(), z(148), "slotPickerUI"]));
+        borders.push(add([rect(242, 38), pos(cx, y), anchor("center"), color(72, 84, 78), fixed(), z(147), "slotPickerUI"]));
+        fills.push(add([rect(240, 36), pos(cx, y), anchor("center"), color(inactive ? 20 : 28, inactive ? 26 : 36, inactive ? 22 : 31), fixed(), z(148), "slotPickerUI"]));
+        line1s.push(add([text(labelLine1(i), { size: 9 }), pos(cx, y - 6), anchor("center"), color(inactive ? 60 : 196, inactive ? 70 : 190, inactive ? 66 : 180), fixed(), z(149), "slotPickerUI"]));
+        line2s.push(add([text(labelLine2(i), { size: 8 }), pos(cx, y + 6), anchor("center"), color(inactive ? 40 : 140, inactive ? 50 : 152, inactive ? 46 : 148), fixed(), z(149), "slotPickerUI"]));
     }
 
     function refresh(sel) {
         for (let i = 0; i < 3; i++) {
             const inactive = mode === "load" && slots[i] === null;
-            btns[i].use(sprite(i === sel && !inactive ? "menuButtonActive" : "menuButton"));
-            lbls[i].color = inactive ? rgb(90, 90, 90) : (i === sel ? rgb(240, 244, 236) : rgb(196, 173, 186));
+            const isSelected = i === sel && !inactive;
+            borders[i].color = isSelected ? rgb(207, 154, 60) : inactive ? rgb(30, 38, 34) : rgb(72, 84, 78);
+            fills[i].color   = isSelected ? rgb(40, 54, 46)   : inactive ? rgb(20, 26, 22)  : rgb(28, 36, 31);
+            line1s[i].color  = inactive ? rgb(60, 70, 66) : isSelected ? rgb(240, 240, 230) : rgb(196, 190, 180);
+            line2s[i].color  = inactive ? rgb(40, 50, 46) : isSelected ? rgb(200, 210, 200) : rgb(140, 152, 148);
         }
     }
 
@@ -706,13 +721,17 @@ await Promise.all([
         menuPlaque: { x: 0, y: 40, width: 220, height: 70 },
         menuButton: { x: 0, y: 110, width: 154, height: 28 },
         menuButtonActive: { x: 0, y: 138, width: 154, height: 28 },
-        controlsPanel: { x: 0, y: 166, width: 280, height: 184 },
-        pausePanel: { x: 0, y: 350, width: 228, height: 176 },
+        menuButtonSm: { x: 0, y: 350, width: 120, height: 24 },
+        menuButtonSmActive: { x: 0, y: 374, width: 120, height: 24 },
+        controlsPanel: { x: 0, y: 398, width: 280, height: 184 },
+        pausePanel: { x: 0, y: 582, width: 240, height: 208 },
     }),
     loadSpriteAtlas("assets/ui/icons.svg", {
         heart: { x: 0, y: 0, width: 10, height: 9 },
         heartEmpty: { x: 10, y: 0, width: 10, height: 9 },
         selectorBat: { x: 20, y: 0, width: 18, height: 10 },
+        soundOn: { x: 38, y: 0, width: 14, height: 12 },
+        soundOff: { x: 52, y: 0, width: 14, height: 12 },
     }),
     loadSprite("gameLogo", "assets/ui/logo.png"),
     loadSpriteAtlas("assets/world/tiles.svg", {
@@ -934,63 +953,101 @@ scene("menu", () => {
 
     configureChase(0);
 
+    const hasSaves = getAllSlots().some(s => s !== null);
+
     const options = [];
-    if (getAllSlots().some(s => s !== null)) {
-        options.push({ label: "CARREGAR JOGO", isLoad: true });
+    options.push({ label: "NOVA OPERACAO", isNewGame: true, col: -1, row: 0 });
+    if (hasSaves) {
+        options.push({ label: "CARREGAR", isLoad: true, col: 0, row: 1 });
+        options.push({ label: "COMO JOGAR", target: "controls", col: 1, row: 1 });
+        options.push({ label: () => `DIFICULDADE: ${DIFFICULTIES[selectedDifficulty].label}`, isDiffToggle: true, col: 0, row: 2 });
+        options.push({ label: () => audioMuted ? "SOM: OFF" : "SOM: ON", isSoundToggle: true, col: 1, row: 2 });
+    } else {
+        options.push({ label: "COMO JOGAR", target: "controls", col: 0, row: 1 });
+        options.push({ label: () => `DIFICULDADE: ${DIFFICULTIES[selectedDifficulty].label}`, isDiffToggle: true, col: 1, row: 1 });
+        options.push({ label: () => audioMuted ? "SOM: OFF" : "SOM: ON", isSoundToggle: true, col: -1, row: 2 });
     }
-    options.push({ label: "NOVA OPERACAO", isNewGame: true });
-    options.push({ label: () => `DIFICULDADE: ${DIFFICULTIES[selectedDifficulty].label}`, isDiffToggle: true });
-    options.push({ label: "COMO JOGAR", target: "controls" });
-    options.push({ label: () => audioMuted ? "SOM: OFF" : "SOM: ON", isSoundToggle: true });
+
+    const MAX_ROW = options.reduce((m, o) => Math.max(m, o.row), 0);
+    const ROW_Y0 = 148;
+    const ROW_Y1 = 180;
+    const ROW_Y2 = 210;
+    const COL_LEFT = 88;
+    const COL_RIGHT = 216;
+    const COL_CENTER = width() / 2;
 
     let selected = 0;
     const buttons = [];
     const labels = [];
+    const soundIcons = [];
 
-    const menuButtonSpacing = options.length <= 3 ? 40 : options.length <= 4 ? 32 : 26;
-    const menuButtonStartY = options.length <= 3 ? 162 : options.length <= 4 ? 148 : 136;
+    function getButtonPos(opt) {
+        if (opt.row === 0) return vec2(COL_CENTER, ROW_Y0);
+        if (opt.row === 1) return vec2(opt.col === 0 ? COL_LEFT : COL_RIGHT, ROW_Y1);
+        if (opt.col === -1) return vec2(COL_CENTER, ROW_Y2);
+        return vec2(opt.col === 0 ? COL_LEFT : COL_RIGHT, ROW_Y2);
+    }
 
     options.forEach((option, index) => {
-        const y = menuButtonStartY + index * menuButtonSpacing;
-        const button = add([
-            sprite(index === selected ? "menuButtonActive" : "menuButton"),
-            pos(width() / 2, y),
-            anchor("center"),
-        ]);
+        const p = getButtonPos(option);
+        const isHero = option.isNewGame;
+        const isSound = option.isSoundToggle;
+        const btnSprite = isHero
+            ? (index === selected ? "menuButtonActive" : "menuButton")
+            : (index === selected ? "menuButtonSmActive" : "menuButtonSm");
+        const button = add([sprite(btnSprite), pos(p), anchor("center")]);
         const labelText = typeof option.label === 'function' ? option.label() : option.label;
         const label = add([
-            text(labelText, { size: 14 }),
-            pos(width() / 2, y + 1),
+            text(labelText, { size: isHero ? 11 : 9 }),
+            pos(p.x + (isSound ? 8 : 0), p.y + 1),
             anchor("center"),
             color(index === selected ? 240 : 196, index === selected ? 244 : 173, index === selected ? 236 : 186),
         ]);
+        let soundIcon = null;
+        if (isSound) {
+            soundIcon = add([
+                sprite(audioMuted ? "soundOff" : "soundOn"),
+                pos(p.x - 42, p.y),
+                anchor("center"),
+                scale(0.75),
+                color(index === selected ? 240 : 160, index === selected ? 244 : 170, index === selected ? 236 : 166),
+            ]);
+        }
         buttons.push(button);
         labels.push(label);
+        soundIcons.push(soundIcon);
     });
 
-    const leftBat = add([
-        sprite("selectorBat"),
-        pos(width() / 2 - 96, menuButtonStartY),
-        anchor("center"),
-    ]);
-    const rightBat = add([
-        sprite("selectorBat"),
-        pos(width() / 2 + 96, menuButtonStartY),
-        anchor("center"),
-        scale(vec2(-1, 1)),
-    ]);
+    const leftBat = add([sprite("selectorBat"), pos(0, 0), anchor("center")]);
+    const rightBat = add([sprite("selectorBat"), pos(0, 0), anchor("center"), scale(vec2(-1, 1))]);
 
     function refreshMenu() {
         buttons.forEach((button, index) => {
-            button.use(sprite(index === selected ? "menuButtonActive" : "menuButton"));
+            const opt = options[index];
+            const isHero = opt.isNewGame;
+            const isSound = opt.isSoundToggle;
+            const btnSprite = isHero
+                ? (index === selected ? "menuButtonActive" : "menuButton")
+                : (index === selected ? "menuButtonSmActive" : "menuButtonSm");
+            button.use(sprite(btnSprite));
             labels[index].color = index === selected ? rgb(240, 244, 236) : rgb(196, 173, 186);
-            if (typeof options[index].label === 'function') {
-                labels[index].text = options[index].label();
+            labels[index].text = typeof opt.label === 'function' ? opt.label() : opt.label;
+            const p = getButtonPos(opt);
+            button.pos = p;
+            labels[index].pos = vec2(p.x + (isSound ? 8 : 0), p.y + 1);
+            if (soundIcons[index]) {
+                soundIcons[index].use(sprite(audioMuted ? "soundOff" : "soundOn"));
+                soundIcons[index].color = index === selected ? rgb(240, 244, 236) : rgb(160, 170, 166);
+                soundIcons[index].pos = vec2(p.x - 42, p.y);
             }
         });
-        leftBat.pos.y = menuButtonStartY + selected * menuButtonSpacing;
-        rightBat.pos.y = menuButtonStartY + selected * menuButtonSpacing;
+        const sp = getButtonPos(options[selected]);
+        const halfW = options[selected].isNewGame ? 88 : 72;
+        leftBat.pos = vec2(sp.x - halfW, sp.y);
+        rightBat.pos = vec2(sp.x + halfW, sp.y);
     }
+
+    refreshMenu();
 
     onUpdate(() => {
         const pulse = 1 + Math.sin(time() * 8) * 0.08;
@@ -1042,13 +1099,61 @@ scene("menu", () => {
         }
     });
 
+    function findInDirection(fromRow, fromCol, dRow, dCol) {
+        let best = -1;
+        let bestDist = Infinity;
+        for (let i = 0; i < options.length; i++) {
+            const o = options[i];
+            if (o.row === fromRow + dRow && o.col === fromCol + dCol) {
+                best = i;
+                bestDist = 0;
+                break;
+            }
+            if (dRow !== 0 && o.row === fromRow + dRow) {
+                const dist = Math.abs(o.col - fromCol);
+                if (dist < bestDist) { best = i; bestDist = dist; }
+            }
+            if (dCol !== 0 && o.col !== -1 && o.col !== fromCol) {
+                if (o.row === fromRow || (Math.abs(o.row - fromRow) <= 1 && bestDist > 1)) {
+                    best = i;
+                    bestDist = Math.abs(o.row - fromRow);
+                }
+            }
+        }
+        return best >= 0 ? best : selected;
+    }
+
     function menuUp() {
-        selected = (selected - 1 + options.length) % options.length;
+        const cur = options[selected];
+        if (cur.row > 0) {
+            selected = findInDirection(cur.row, cur.col, -1, 0);
+        }
         playSfx("uiMove");
         refreshMenu();
     }
     function menuDown() {
-        selected = (selected + 1) % options.length;
+        const cur = options[selected];
+        if (cur.row < MAX_ROW) {
+            selected = findInDirection(cur.row, cur.col, 1, 0);
+        }
+        playSfx("uiMove");
+        refreshMenu();
+    }
+    function menuLeft() {
+        const cur = options[selected];
+        if (cur.col === 1) {
+            selected = findInDirection(cur.row, 1, 0, -1);
+            if (options[selected].col === cur.col) { selected = findInDirection(cur.row, 1, -1, -1); }
+        }
+        playSfx("uiMove");
+        refreshMenu();
+    }
+    function menuRight() {
+        const cur = options[selected];
+        if (cur.col === 0) {
+            selected = findInDirection(cur.row, 0, 0, 1);
+            if (options[selected].col === cur.col) { selected = findInDirection(cur.row, 0, -1, 1); }
+        }
         playSfx("uiMove");
         refreshMenu();
     }
@@ -1088,33 +1193,39 @@ scene("menu", () => {
 
     onKeyPress("up",     () => { if (isSlotPickerOpen) { _pickerMove(-1); return; } menuUp(); });
     onKeyPress("down",   () => { if (isSlotPickerOpen) { _pickerMove(1);  return; } menuDown(); });
+    onKeyPress("left",   () => { if (isSlotPickerOpen) { _pickerMove(-1); return; } menuLeft(); });
+    onKeyPress("right",  () => { if (isSlotPickerOpen) { _pickerMove(1);  return; } menuRight(); });
     onKeyPress("enter",  () => { if (isSlotPickerOpen) { _pickerConfirm(); return; } menuConfirm(); });
     onKeyPress("escape", () => { if (isSlotPickerOpen) { playSfx("uiBack"); _pickerClose(); return; } });
     onKeyPress("x",      () => { if (isSlotPickerOpen) { playSfx("uiBack"); _pickerClose(); return; } });
 
-    // Virtual controls: D-pad navigates, X confirms, START ignored
+    // Virtual controls: D-pad navigates, X confirms, Y ignored
     let vNavTimer = 0;
     onUpdate(() => {
         vNavTimer -= dt();
         if (isSlotPickerOpen) {
             if (vNavTimer <= 0) {
-                if (vKeys.up)   { _pickerMove(-1); vNavTimer = 0.22; }
-                if (vKeys.down) { _pickerMove(1);  vNavTimer = 0.22; }
+                if (vKeys.up)    { _pickerMove(-1); vNavTimer = 0.22; }
+                if (vKeys.down)  { _pickerMove(1);  vNavTimer = 0.22; }
+                if (vKeys.left)  { _pickerMove(-1); vNavTimer = 0.22; }
+                if (vKeys.right) { _pickerMove(1);  vNavTimer = 0.22; }
             }
             if (virtualBombPressed)  { virtualBombPressed  = false; _pickerConfirm(); }
             if (virtualPausePressed) { virtualPausePressed = false; playSfx("uiBack"); _pickerClose(); }
             return;
         }
         if (vNavTimer <= 0) {
-            if (vKeys.up)   { menuUp();   vNavTimer = 0.22; }
-            if (vKeys.down) { menuDown(); vNavTimer = 0.22; }
+            if (vKeys.up)    { menuUp();    vNavTimer = 0.22; }
+            if (vKeys.down)  { menuDown();  vNavTimer = 0.22; }
+            if (vKeys.left)  { menuLeft();  vNavTimer = 0.22; }
+            if (vKeys.right) { menuRight(); vNavTimer = 0.22; }
         }
         if (virtualBombPressed)  { virtualBombPressed  = false; menuConfirm(); }
         if (virtualPausePressed) { virtualPausePressed = false; }
     });
 
     add([
-        text("Use as setas para navegar e ENTER para escolher", { size: 10 }),
+        text("Setas + ENTER para escolher", { size: 9 }),
         pos(width() / 2, height() - 18),
         anchor("center"),
         color(149, 160, 154),
@@ -1246,6 +1357,9 @@ scene("game", () => {
     let pauseSelection = 0;
     let pauseButtons = [];
     let pauseLabels = [];
+    let pauseSoundIcon = null;
+    let pauseSoundBtn = null;
+    let pauseSoundText = null;
     let resultSelection = 0;
     let resultButtons = [];
     let resultLabels = [];
@@ -2229,18 +2343,25 @@ scene("game", () => {
         clearTag("pauseUI");
         pauseButtons = [];
         pauseLabels = [];
+        pauseSoundIcon = null;
+        pauseSoundBtn = null;
+        pauseSoundText = null;
     }
 
     function refreshPauseMenu() {
         pauseButtons.forEach((button, index) => {
             button.use(sprite(index === pauseSelection ? "menuButtonActive" : "menuButton"));
-            pauseLabels[index].color = index === pauseSelection
-                ? rgb(240, 244, 236)
-                : rgb(196, 173, 186);
-            if (typeof pauseOptions[index].label === 'function') {
-                pauseLabels[index].text = pauseOptions[index].label();
-            }
+            pauseLabels[index].color = index === pauseSelection ? rgb(240, 244, 236) : rgb(196, 173, 186);
         });
+        if (pauseSoundBtn) {
+            pauseSoundBtn.use(sprite(pauseSelection === 4 ? "menuButtonActive" : "menuButton"));
+            pauseSoundIcon.use(sprite(audioMuted ? "soundOff" : "soundOn"));
+            const label = audioMuted ? "DESLIGADO" : "LIGADO";
+            pauseSoundText.text = label;
+            const isSelected = pauseSelection === 4;
+            pauseSoundText.color = isSelected ? rgb(240, 244, 236) : rgb(196, 173, 186);
+            pauseSoundIcon.color = isSelected ? rgb(240, 244, 236) : rgb(160, 170, 166);
+        }
     }
 
     function closePause() {
@@ -2257,68 +2378,33 @@ scene("game", () => {
         isPaused = true;
         clearPauseUI();
 
-        add([
-            rect(width(), height()),
-            pos(0, 0),
-            color(0, 0, 0),
-            opacity(0.62),
-            fixed(),
-            z(130),
-            "pauseUI",
-        ]);
-        add([
-            sprite("pausePanel"),
-            pos(width() / 2, height() / 2),
-            anchor("center"),
-            fixed(),
-            z(131),
-            "pauseUI",
-        ]);
-        add([
-            text("OPERACAO PAUSADA", { size: 18 }),
-            pos(width() / 2, height() / 2 - 56),
-            anchor("center"),
-            color(236, 208, 122),
-            fixed(),
-            z(132),
-            "pauseUI",
-        ]);
-        add([
-            text("Escolha sua proxima acao", { size: 10 }),
-            pos(width() / 2, height() / 2 - 38),
-            anchor("center"),
-            color(182, 194, 188),
-            fixed(),
-            z(132),
-            "pauseUI",
-        ]);
+        const cx = width() / 2;
+        const cy = height() / 2;
+
+        add([rect(width(), height()), pos(0, 0), color(0, 0, 0), opacity(0.62), fixed(), z(130), "pauseUI"]);
+        add([sprite("pausePanel"), pos(cx, cy), anchor("center"), fixed(), z(131), "pauseUI"]);
+        add([text("OPERACAO PAUSADA", { size: 16 }), pos(cx, cy - 72), anchor("center"), color(236, 208, 122), fixed(), z(132), "pauseUI"]);
+        add([text("Escolha sua proxima acao", { size: 9 }), pos(cx, cy - 56), anchor("center"), color(182, 194, 188), fixed(), z(132), "pauseUI"]);
 
         pauseSelection = 0;
-        const _pSpacing = pauseOptions.length <= 4 ? 30 : 24;
-        const _pStartY  = height() / 2 - (pauseOptions.length <= 4 ? 38 : 48);
-        pauseOptions.forEach((option, index) => {
-            const y = _pStartY + index * _pSpacing;
-            const button = add([
-                sprite(index === 0 ? "menuButtonActive" : "menuButton"),
-                pos(width() / 2, y),
-                anchor("center"),
-                fixed(),
-                z(132),
-                "pauseUI",
-            ]);
-            const labelText = typeof option.label === 'function' ? option.label() : option.label;
-            const label = add([
-                text(labelText, { size: 12 }),
-                pos(width() / 2, y + 1),
-                anchor("center"),
-                color(index === 0 ? 240 : 196, index === 0 ? 244 : 173, index === 0 ? 236 : 186),
-                fixed(),
-                z(133),
-                "pauseUI",
-            ]);
+        // 4 action buttons (indices 0-3), starting at cy-40, spacing 28px
+        const actionYStart = cy - 40;
+        for (let i = 0; i < 4; i++) {
+            const y = actionYStart + i * 28;
+            const option = pauseOptions[i];
+            const button = add([sprite(i === 0 ? "menuButtonActive" : "menuButton"), pos(cx, y), anchor("center"), fixed(), z(132), "pauseUI"]);
+            const label = add([text(option.label, { size: 10 }), pos(cx, y + 1), anchor("center"), color(i === 0 ? 240 : 196, i === 0 ? 244 : 173, i === 0 ? 236 : 186), fixed(), z(133), "pauseUI"]);
             pauseButtons.push(button);
             pauseLabels.push(label);
-        });
+        }
+
+        // Separator
+        add([rect(196, 1), pos(cx, cy + 58), anchor("center"), color(74, 86, 80), fixed(), z(132), "pauseUI"]);
+
+        // Sound toggle (index 4) — button with speaker icon
+        pauseSoundBtn = add([sprite("menuButton"), pos(cx, cy + 72), anchor("center"), fixed(), z(132), "pauseUI"]);
+        pauseSoundIcon = add([sprite(audioMuted ? "soundOff" : "soundOn"), pos(cx - 50, cy + 72), anchor("center"), scale(0.8), fixed(), z(133), "pauseUI"]);
+        pauseSoundText = add([text(audioMuted ? "DESLIGADO" : "LIGADO", { size: 9 }), pos(cx + 4, cy + 73), anchor("center"), color(196, 173, 186), fixed(), z(133), "pauseUI"]);
 
         refreshPauseMenu();
     }
@@ -2854,7 +2940,7 @@ scene("boss", () => {
             resultOptions.forEach((opt, i) => {
                 const y = height()/2 + 14 + i * 28;
                 const btn = add([sprite(i===0?"menuButtonActive":"menuButton"), pos(width()/2,y), anchor("center"), fixed(), z(151), "resultUI"]);
-                const lbl = add([text(opt.label, { size: 12 }), pos(width()/2,y+1), anchor("center"), color(i===0?240:196,i===0?244:173,i===0?236:186), fixed(), z(152), "resultUI"]);
+                const lbl = add([text(opt.label, { size: 10 }), pos(width()/2,y+1), anchor("center"), color(i===0?240:196,i===0?244:173,i===0?236:186), fixed(), z(152), "resultUI"]);
                 resultButtons.push(btn); resultLabels.push(lbl);
             });
             return;
@@ -2983,14 +3069,15 @@ scene("boss", () => {
         isPaused = true;
         get("pauseUI").forEach(o => destroy(o));
         pauseButtons = []; pauseLabels = [];
-        add([rect(width(),height()), pos(0,0), color(0,0,0), opacity(0.62), fixed(), z(130), "pauseUI"]);
-        add([sprite("pausePanel"), pos(width()/2,height()/2), anchor("center"), fixed(), z(131), "pauseUI"]);
-        add([text("OPERACAO PAUSADA", { size: 18 }), pos(width()/2,height()/2-56), anchor("center"), color(236,208,122), fixed(), z(132), "pauseUI"]);
+        const cx = width() / 2, cy = height() / 2;
+        add([rect(width(), height()), pos(0, 0), color(0, 0, 0), opacity(0.62), fixed(), z(130), "pauseUI"]);
+        add([sprite("pausePanel"), pos(cx, cy), anchor("center"), fixed(), z(131), "pauseUI"]);
+        add([text("OPERACAO PAUSADA", { size: 16 }), pos(cx, cy - 80), anchor("center"), color(236, 208, 122), fixed(), z(132), "pauseUI"]);
         pauseSelection = 0;
         bossPauseOptions.forEach((opt, i) => {
-            const y = height()/2 - 10 + i * 34;
-            const btn = add([sprite(i===0?"menuButtonActive":"menuButton"), pos(width()/2,y), anchor("center"), fixed(), z(132), "pauseUI"]);
-            const lbl = add([text(opt.label, { size: 12 }), pos(width()/2,y+1), anchor("center"), color(i===0?240:196,i===0?244:173,i===0?236:186), fixed(), z(133), "pauseUI"]);
+            const y = cy - 32 + i * 32;
+            const btn = add([sprite(i === 0 ? "menuButtonActive" : "menuButton"), pos(cx, y), anchor("center"), fixed(), z(132), "pauseUI"]);
+            const lbl = add([text(opt.label, { size: 12 }), pos(cx, y + 1), anchor("center"), color(i === 0 ? 240 : 196, i === 0 ? 244 : 173, i === 0 ? 236 : 186), fixed(), z(133), "pauseUI"]);
             pauseButtons.push(btn); pauseLabels.push(lbl);
         });
     }
